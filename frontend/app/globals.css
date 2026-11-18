@@ -1,26 +1,313 @@
+/* frontend/app/globals.css */
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* New White & Ocean-Teal Studio Palette */
+  --bg-studio-white: #ffffff;
+  --bg-studio-mist: #f4fafc;
+  --bg-studio-aqua: #eaf4f7;
+  --teal-ocean: #136d7e;
+  --teal-ocean-dark: #0e5361;
+  --slate-ink: #162c33;
+
+  /* Legacy Variables (Kept safe for inner pages) */
+  --bg-ivory: #faf7f5;
+  --bg-pastel-blush: #f5ecee;
+  --bg-pastel-mist: #eaf2f4;
+  --teal-deep: #0d3b4c;
+  --teal-slate: #165166;
+  --rose-gold: #b76e79;
+  --rose-gold-light: #d99b96;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  background-color: #ffffff;
+  color: #162c33;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #ffffff;
+  color: #162c33;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Custom Ocean-Teal Studio Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #9acbd7, #136d7e);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0e5361;
+}
+
+/* ==========================================================================
+   1. LUXURY STUDIO ANIMATIONS (Apple / Stripe Smooth Motion Curve)
+   ========================================================================== */
+
+/* Smooth Staggered Entrance Reveal */
+@keyframes studioRevealUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.anim-reveal-up {
+  animation: studioRevealUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Stagger Delays for Grid Cards */
+.anim-delay-1 { animation-delay: 65ms; }
+.anim-delay-2 { animation-delay: 130ms; }
+.anim-delay-3 { animation-delay: 195ms; }
+.anim-delay-4 { animation-delay: 260ms; }
+.anim-delay-5 { animation-delay: 325ms; }
+.anim-delay-6 { animation-delay: 390ms; }
+
+/* Gentle Zero-Lag Levitation (For Laptops, Phones & Studio Illustrations) */
+@keyframes studioFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.anim-float,
+.animate-gentle-float {
+  animation: studioFloat 5.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Glass Light-Sweep Glint (For MacBook & iPhone Screens) */
+@keyframes studioGlassGlint {
+  0% {
+    transform: translateX(-160%) skewX(-24deg);
+  }
+  45%,
+  100% {
+    transform: translateX(260%) skewX(-24deg);
+  }
+}
+
+.anim-glint {
+  animation: studioGlassGlint 7s ease-in-out infinite;
+}
+
+/* Luxury Studio Card Elevation & Glow */
+.luxury-card {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.32s ease;
+}
+
+.luxury-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 38px rgba(19, 109, 126, 0.14);
+  border-color: rgba(19, 109, 126, 0.4);
+}
+
+.luxury-card:active {
+  transform: scale(0.985);
+}
+
+/* Live Website Preview Auto-Scroll Inside Laptop Cards */
+.laptop-scroll-preview {
+  transition: transform 2.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.group:hover .laptop-scroll-preview {
+  transform: translateY(-22%);
+}
+
+/* Primary Ocean-Teal Pill CTA Button */
+.btn-ocean-luxury {
+  background: linear-gradient(135deg, #177d90 0%, #0e5361 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow:
+    0 10px 24px -4px rgba(19, 109, 126, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-ocean-luxury:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 30px -4px rgba(19, 109, 126, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.btn-ocean-luxury:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   2. BACKWARD-COMPATIBLE UTILITIES (For Existing Inner Pages)
+   ========================================================================== */
+
+.perspective-1400 {
+  perspective: 1400px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.text-rosegold-gradient {
+  background: linear-gradient(135deg, #b76e79 0%, #d49a89 55%, #9e5662 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-rosegold-3d {
+  background: linear-gradient(135deg, #c27b85 0%, #b76e79 50%, #9f5863 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow:
+    0 12px 28px -6px rgba(183, 110, 121, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-rosegold-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px -6px rgba(183, 110, 121, 0.55);
+}
+
+.btn-teal-3d {
+  background: linear-gradient(135deg, #177d90 0%, #0e5361 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow:
+    0 12px 26px -6px rgba(19, 109, 126, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-teal-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px -6px rgba(19, 109, 126, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-reveal-up,
+  .anim-float,
+  .animate-gentle-float,
+  .anim-glint {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   GLOBAL 3D STUDIO ANIMATIONS & LUXURY BUTTONS
+   ========================================================= */
+
+@keyframes float3D {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotateX(1.5deg);
+  }
+}
+
+@keyframes glintSweep {
+  0% {
+    transform: translateX(-160%) skewX(-22deg);
+  }
+  55%, 100% {
+    transform: translateX(360%) skewX(-22deg);
+  }
+}
+
+@keyframes revealUp3D {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+}
+
+@keyframes laptopScrollPreview {
+  0%, 15% {
+    transform: translateY(0%);
+  }
+  50%, 65% {
+    transform: translateY(-24%);
+  }
+  90%, 100% {
+    transform: translateY(0%);
+  }
+}
+
+.anim-float {
+  animation: float3D 4.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.anim-glint {
+  animation: glintSweep 4.2s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+  will-change: transform;
+}
+
+.anim-reveal-up {
+  animation: revealUp3D 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.laptop-scroll-preview {
+  animation: laptopScrollPreview 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.btn-ocean-luxury {
+  background: linear-gradient(135deg, #136D7E 0%, #0D5260 55%, #19879B 100%);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(19, 109, 126, 0.28);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.btn-ocean-luxury:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(19, 109, 126, 0.38);
+}
+
+/* Hide horizontal scrollbar on pill bars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
