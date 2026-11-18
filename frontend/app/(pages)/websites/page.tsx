@@ -1,642 +1,553 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Lenis from "lenis";
-import gsap from "gsap";
 import {
-  ArrowLeft,
-  Check,
-  ShieldCheck,
+  Search,
   ArrowRight,
   Sparkles,
+  X,
+  Heart,
+  LayoutGrid,
+  Shirt,
+  Utensils,
+  Stethoscope,
+  GraduationCap,
+  ShoppingCart,
+  Camera,
+  Flame,
   Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  Smartphone,
-  Monitor,
-  Layers,
+  CheckCircle2,
   Star,
+  Layers,
+  ChevronDown,
+  Flower2,
+  Plus,
 } from "lucide-react";
 
-export interface VideoReelItem {
-  id: string;
-  stepNumber: string;
-  title: string;
-  subtitle: string;
-  videoUrl: string;
-  posterUrl: string;
-}
-
-export interface WebsiteDetailItem {
+export interface WebsiteCatalogItem {
   websiteSlug: string;
   title: string;
-  tagline: string;
+  screenSubtitle?: string;
+  screenTheme?: string;
   category: string;
   categorySlug: string;
-  codePrice: number;
-  turnkeyPrice: number;
-  speedScore: string;
+  priceLabel: string;
+  startingPrice: string;
+  numericPrice: number;
   badgeText: string;
-  desktopReels: VideoReelItem[];
-  mobileVideoUrl: string;
-  mobilePosterUrl: string;
-  techStack: string[];
-  features: string[];
+  techTag: string;
+  image: string;
 }
 
-const DEFAULT_WEBSITE_CATALOG: WebsiteDetailItem[] = [
-  {
-    websiteSlug: "zarii-boutique",
-    title: "Zarii Boutique",
-    tagline:
-      "Bespoke Bridal Couture, Ethnic Store & Custom Tailoring Experience",
-    category: "Fashion & Luxury Couture",
-    categorySlug: "fashion-lifestyle",
-    codePrice: 9999,
-    turnkeyPrice: 12999,
-    speedScore: "99%",
-    badgeText: "SIGNATURE EDITION",
-    // Aapke 5 videos yahan sequence mein automatic chalenge (bina kate!)
-    desktopReels: [
-      {
-        id: "v1",
-        stepNumber: "01",
-        title: "Home Page & Hero",
-        subtitle: "Editorial couture banner & category showcase",
-        videoUrl: "/videos/zarii-1.mp4",
-        posterUrl: "/home.jpeg",
-      },
-      {
-        id: "v2",
-        stepNumber: "02",
-        title: "Shop & Collection",
-        subtitle: "Complete product grid, filters & quick add",
-        videoUrl: "/videos/zarii-2.mp4",
-        posterUrl: "/shop.jpeg",
-      },
-      {
-        id: "v3",
-        stepNumber: "03",
-        title: "Product Detail View",
-        subtitle: "Multi-angle zoom, sizing & verified reviews",
-        videoUrl: "/videos/zarii-3.mp4",
-        posterUrl: "/shop2.jpeg",
-      },
-      {
-        id: "v4",
-        stepNumber: "04",
-        title: "Bridal Lookbook Gallery",
-        subtitle: "Interactive festive portfolio & slot booking",
-        videoUrl: "/videos/zarii-4.mp4",
-        posterUrl: "/gallery.jpeg",
-      },
-      {
-        id: "v5",
-        stepNumber: "05",
-        title: "Brand Story & Contact",
-        subtitle: "About us, milestones & direct order flow",
-        videoUrl: "/videos/zarii-5.mp4",
-        posterUrl: "/aboutus.jpeg",
-      },
-    ],
-    // Side mein chalne wale Mobile frame ka video (aap chahein toh alag mobile video ya zarii-1.mp4 rakh sakti hain)
-    mobileVideoUrl: "/videos/zarii-1.mp4",
-    mobilePosterUrl: "/home.jpeg",
-    techStack: ["Next.js", "Tailwind CSS", "Node.js", "MongoDB", "Razorpay"],
-    features: [
-      "Luxury Editorial Hero & Interactive Product Catalog",
-      "Custom Blouse & Bridal Measurement Booking Form",
-      "Direct WhatsApp Order + Razorpay Checkout",
-      "Complete Inventory, Order & Review Admin Panel",
-    ],
-  },
-  {
-    websiteSlug: "the-purple-cafe",
-    title: "The Purple Café",
-    tagline: "Artisan Coffee House, Fine Dining & QR Table Ordering System",
-    category: "Dining & Hospitality",
-    categorySlug: "dining-hospitality",
-    codePrice: 12999,
-    turnkeyPrice: 15999,
-    speedScore: "98%",
-    badgeText: "TRENDING",
-    desktopReels: [
-      {
-        id: "c1",
-        stepNumber: "01",
-        title: "Café & Dining Experience",
-        subtitle: "QR table menu & live reservation system",
-        videoUrl: "/videos/the-purple-cafe.mp4",
-        posterUrl:
-          "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1400&q=85",
-      },
-    ],
-    mobileVideoUrl: "/videos/the-purple-cafe.mp4",
-    mobilePosterUrl:
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=900&q=85",
-    techStack: ["Next.js", "Tailwind CSS", "Express", "MongoDB", "QR Menu"],
-    features: [
-      "Contactless QR Code Table Menu & Ordering",
-      "Live Table Reservation & Party Booking Calendar",
-      "Kitchen Order Ticket (KOT) Live Admin Screen",
-      "Direct Home Delivery Zone & UPI Checkout",
-    ],
-  },
-];
+export interface CategoryFilterTab {
+  categorySlug: string;
+  label: string;
+}
 
-function WebsiteDetailContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const websiteSlug = searchParams.get("website") || "zarii-boutique";
+export interface WebsitesPageData {
+  eyebrowLabel: string;
+  heading: string;
+  subheading: string;
+  searchPlaceholder: string;
+  filterTabs: CategoryFilterTab[];
+  websites: WebsiteCatalogItem[];
+}
 
-  const [catalog] = useState<WebsiteDetailItem[]>(DEFAULT_WEBSITE_CATALOG);
-  const [activeReelIndex, setActiveReelIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(true);
-  const [packageType, setPackageType] = useState<"turnkey" | "code">("turnkey");
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
+const DEFAULT_WEBSITES_PAGE_DATA: WebsitesPageData = {
+  eyebrowLabel: "COMPLETE TEMPLATE MARKETPLACE",
+  heading: "Explore All Ready-to-Launch Websites",
+  subheading:
+    "Browse 150+ high-converting, mobile-responsive websites with full source code and built-in Admin Panel.",
+  searchPlaceholder: "Search by business, boutique, cafe, clinic...",
+  filterTabs: [
+    { categorySlug: "all", label: "All Websites" },
+    { categorySlug: "fashion-lifestyle", label: "Fashion & Lifestyle" },
+    { categorySlug: "dining-hospitality", label: "Dining & Hospitality" },
+    { categorySlug: "healthcare-medical", label: "Healthcare & Medical" },
+    { categorySlug: "education-learning", label: "Education & Learning" },
+    { categorySlug: "beauty-wellness", label: "Beauty & Wellness" },
+    { categorySlug: "ecommerce-retail", label: "E-Commerce & Retail" },
+    { categorySlug: "creative-portfolio", label: "Creative Portfolio" },
+  ],
+  websites: [
+    {
+      websiteSlug: "zarii-boutique",
+      title: "Zarii Boutique",
+      screenSubtitle: "Ethnic & Designer Wear",
+      screenTheme: "from-[#6E1A29] via-[#8C2436] to-[#4A101B]",
+      category: "Fashion & Lifestyle",
+      categorySlug: "fashion-lifestyle",
+      priceLabel: "Starting at",
+      startingPrice: "₹9,999",
+      numericPrice: 9999,
+      badgeText: "Bestseller",
+      techTag: "Next.js + Store",
+      image:
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "the-purple-cafe",
+      title: "The Purple Café",
+      screenSubtitle: "Cafe & Dining Experience",
+      screenTheme: "from-[#4A2E20] via-[#633E2C] to-[#331E14]",
+      category: "Dining & Hospitality",
+      categorySlug: "dining-hospitality",
+      priceLabel: "Starting at",
+      startingPrice: "₹12,999",
+      numericPrice: 12999,
+      badgeText: "Live Demo",
+      techTag: "QR Menu + Booking",
+      image:
+        "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "healthcare-plus",
+      title: "HealthCare Plus",
+      screenSubtitle: "Your Health, Our Priority",
+      screenTheme: "from-[#0F5E63] via-[#16787E] to-[#0A4145]",
+      category: "Healthcare & Medical",
+      categorySlug: "healthcare-medical",
+      priceLabel: "Starting at",
+      startingPrice: "₹11,999",
+      numericPrice: 11999,
+      badgeText: "Verified",
+      techTag: "Doctor Slot CRM",
+      image:
+        "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "learnsphere",
+      title: "LearnSphere",
+      screenSubtitle: "Learn • Grow • Achieve",
+      screenTheme: "from-[#1A3B5C] via-[#25507A] to-[#112840]",
+      category: "Education & Learning",
+      categorySlug: "education-learning",
+      priceLabel: "Starting at",
+      startingPrice: "₹14,999",
+      numericPrice: 14999,
+      badgeText: "Top Rated",
+      techTag: "LMS + Live Batch",
+      image:
+        "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "aura-bridal-studio",
+      title: "Aura Bridal Studio",
+      screenSubtitle: "Bridal • Makeup • Styling",
+      screenTheme: "from-[#542232] via-[#702E43] to-[#381520]",
+      category: "Beauty & Wellness",
+      categorySlug: "beauty-wellness",
+      priceLabel: "Starting at",
+      startingPrice: "₹8,999",
+      numericPrice: 8999,
+      badgeText: "Live Demo",
+      techTag: "Artist Booking",
+      image:
+        "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "urbankart-pro",
+      title: "UrbanKart Pro",
+      screenSubtitle: "Multi-Vendor E-Commerce",
+      screenTheme: "from-[#144361] via-[#1D5B82] to-[#0D2E45]",
+      category: "E-Commerce & Retail",
+      categorySlug: "ecommerce-retail",
+      priceLabel: "Starting at",
+      startingPrice: "₹13,499",
+      numericPrice: 13499,
+      badgeText: "New",
+      techTag: "Multi-Vendor Shop",
+      image:
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "lenscraft-studio",
+      title: "LensCraft Portfolio",
+      screenSubtitle: "Photography & Creative Work",
+      screenTheme: "from-[#222830] via-[#323B46] to-[#161A20]",
+      category: "Personal & Creative",
+      categorySlug: "creative-portfolio",
+      priceLabel: "Starting at",
+      startingPrice: "₹6,999",
+      numericPrice: 6999,
+      badgeText: "3D Gallery",
+      techTag: "3D Showcase",
+      image:
+        "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85",
+    },
+    {
+      websiteSlug: "royal-saffron-kitchen",
+      title: "Royal Saffron Kitchen",
+      screenSubtitle: "Fine Dining & Catering",
+      screenTheme: "from-[#4A2816] via-[#663820] to-[#30190D]",
+      category: "Dining & Hospitality",
+      categorySlug: "dining-hospitality",
+      priceLabel: "Starting at",
+      startingPrice: "₹10,499",
+      numericPrice: 10499,
+      badgeText: "Live Demo",
+      techTag: "Cloud Kitchen",
+      image:
+        "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=900&q=85",
+    },
+  ],
+};
 
-  const pageRef = useRef<HTMLDivElement | null>(null);
-  const desktopVideoRef = useRef<HTMLVideoElement | null>(null);
-  const mobileVideoRef = useRef<HTMLVideoElement | null>(null);
-  const desktopFrameRef = useRef<HTMLDivElement | null>(null);
-  const mobileFrameRef = useRef<HTMLDivElement | null>(null);
+function Catalog3DCard({
+  item,
+  index,
+  isLiked,
+  onToggleLike,
+  onNavigate,
+  renderCategoryIcon,
+  renderBadgeIcon,
+}: {
+  item: WebsiteCatalogItem;
+  index: number;
+  isLiked: boolean;
+  onToggleLike: (e: React.MouseEvent, slug: string) => void;
+  onNavigate: (slug: string) => void;
+  renderCategoryIcon: (slug: string) => React.ReactNode;
+  renderBadgeIcon: (badgeText: string) => React.ReactNode;
+}) {
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, hovered: false });
 
-  // 1. Lenis Silky Smooth Inertia Scroll
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.25,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({
+      rotateX: -(y * 11),
+      rotateY: x * 13,
+      hovered: true,
     });
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
-  }, []);
-
-  // 2. GSAP Aesthetic Entrance & Floating Mobile Animation
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".aesthetic-reveal", {
-        y: 28,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: "power3.out",
-      });
-
-      if (mobileFrameRef.current) {
-        gsap.to(mobileFrameRef.current, {
-          y: -10,
-          duration: 3.2,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
-      }
-    }, pageRef);
-
-    return () => ctx.revert();
-  }, [websiteSlug]);
-
-  const activeWebsite =
-    catalog.find((item) => item.websiteSlug === websiteSlug) || catalog[0];
-
-  const reels = activeWebsite.desktopReels;
-  const currentReel = reels[activeReelIndex] || reels[0];
-
-  // 3. Smooth GSAP Transition When Switching Between the 5 Videos
-  useEffect(() => {
-    if (desktopFrameRef.current) {
-      gsap.fromTo(
-        desktopFrameRef.current,
-        { opacity: 0.45, scale: 0.985 },
-        { opacity: 1, scale: 1, duration: 0.65, ease: "power2.out" }
-      );
-    }
-    if (desktopVideoRef.current && isPlaying) {
-      desktopVideoRef.current.play().catch(() => {});
-    }
-  }, [activeReelIndex, isPlaying]);
-
-  const handleTogglePlayAll = () => {
-    const dVid = desktopVideoRef.current;
-    const mVid = mobileVideoRef.current;
-    if (isPlaying) {
-      dVid?.pause();
-      mVid?.pause();
-      setIsPlaying(false);
-    } else {
-      dVid?.play().catch(() => {});
-      mVid?.play().catch(() => {});
-      setIsPlaying(true);
-    }
   };
 
-  const handleFullScreen = () => {
-    const dVid = desktopVideoRef.current;
-    if (dVid && dVid.requestFullscreen) {
-      dVid.requestFullscreen();
-    }
+  const handleMouseLeave = () => {
+    setTilt({ rotateX: 0, rotateY: 0, hovered: false });
   };
 
-  const finalPrice =
-    packageType === "turnkey"
-      ? activeWebsite.turnkeyPrice
-      : activeWebsite.codePrice;
+  const stageGradient =
+    index % 2 === 0
+      ? "bg-gradient-to-b from-[#56ACA9] via-[#A3E0DC] to-[#F3FBF9]"
+      : "bg-gradient-to-b from-[#5CA6B5] via-[#A8DCE6] to-[#F3FAFC]";
 
-  const handleProceedOrder = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (apiUrl) {
-      try {
-        await fetch(`${apiUrl}/orders`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            websiteSlug: activeWebsite.websiteSlug,
-            packageType,
-            amount: finalPrice,
-          }),
-        });
-      } catch (err) {
-        console.error("Order submit error:", err);
-      }
-    }
-    setOrderSubmitted(true);
-  };
+  const screenBg =
+    item.screenTheme || "from-[#1A434E] via-[#265D6B] to-[#112E36]";
 
   return (
     <div
-      ref={pageRef}
-      className="min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F3F8F7] to-[#FFFFFF] text-[#112A2C] pb-24 selection:bg-[#0F3D3E] selection:text-[#F5E6C4]"
+      className="[perspective:1200px]"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={() => onNavigate(item.websiteSlug)}
     >
-      {/* AMBIENT AESTHETIC BACKGROUND HALOS */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-32 right-10 w-[460px] h-[460px] rounded-full bg-[#E8D5B7]/35 blur-[130px]" />
-        <div className="absolute top-60 -left-24 w-[420px] h-[420px] rounded-full bg-[#A7E0DA]/30 blur-[130px]" />
-      </div>
+      <div
+        style={{
+          transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) ${
+            tilt.hovered
+              ? "translateY(-6px) scale(1.015)"
+              : "translateY(0px) scale(1)"
+          }`,
+        }}
+        className="group cursor-pointer rounded-[24px] bg-white p-[5px] border border-white shadow-[0_12px_30px_rgba(15,82,86,0.08)] hover:shadow-[0_24px_48px_rgba(19,109,126,0.18)] transition-all duration-300 ease-out [transform-style:preserve-3d] flex flex-col justify-between h-full"
+      >
+        <div
+          className={`relative rounded-t-[20px] rounded-b-[12px] ${stageGradient} pt-3 pb-3.5 px-3 overflow-hidden [transform-style:preserve-3d]`}
+        >
+          <div className="pointer-events-none absolute -top-10 -left-10 w-36 h-36 rounded-full bg-white/35 blur-2xl" />
 
-      {/* MINIMAL GLASS TOP BAR */}
-      <header className="sticky top-0 z-40 bg-[#FAF7F2]/80 backdrop-blur-xl border-b border-[#E5DEC9]/70 px-4 sm:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/websites")}
-            className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white hover:bg-[#0F3D3E] text-[#0F3D3E] hover:text-white border border-[#DFD6C3] text-xs font-bold shadow-2xs transition-all"
+          <div
+            style={{
+              transform: tilt.hovered ? "translateZ(24px)" : "translateZ(0px)",
+            }}
+            className="relative z-20 flex items-center justify-between gap-2 mb-2.5 transition-transform duration-300"
           >
-            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Back to All Websites</span>
-          </button>
+            <button
+              type="button"
+              onClick={(e) => onToggleLike(e, item.websiteSlug)}
+              aria-label={`Wishlist ${item.title}`}
+              className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md border transition-all duration-200 ${
+                isLiked
+                  ? "bg-rose-500 border-rose-400 text-white scale-110 shadow-sm"
+                  : "bg-white/30 hover:bg-white/50 border-white/60 text-white"
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-white" : ""}`} />
+            </button>
 
-          <div className="flex items-center gap-2.5">
-            <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EFE9DC] text-[#6E5631] text-[10.5px] font-extrabold tracking-widest uppercase">
-              <Sparkles className="w-3 h-3 text-[#B68D40]" />
-              <span>{activeWebsite.badgeText}</span>
-            </span>
-            <span className="px-3 py-1 rounded-full bg-[#E6F3F1] text-[#0F3D3E] text-[10.5px] font-extrabold">
-              Speed {activeWebsite.speedScore}
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FFFDF5] via-[#FFF3C4] to-[#FDE68A] border border-white/80 text-[#142930] font-extrabold text-[10px] tracking-tight shadow-[0_4px_10px_rgba(15,61,70,0.12)]">
+              {renderBadgeIcon(item.badgeText)}
+              <span>{item.badgeText}</span>
             </span>
           </div>
-        </div>
-      </header>
 
-      {/* EDITORIAL AESTHETIC TITLE SECTION */}
-      <section className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-8 pt-8 sm:pt-11 space-y-3 aesthetic-reveal">
-        <p className="text-[11px] font-extrabold tracking-[0.26em] uppercase text-[#8A6D3B]">
-          {activeWebsite.category}
-        </p>
-
-        <h1 className="font-serif text-4xl sm:text-5xl lg:text-[56px] font-bold text-[#0F3D3E] leading-[1.08] tracking-tight">
-          {activeWebsite.title}
-        </h1>
-
-        <p className="text-xs sm:text-[15px] text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          {activeWebsite.tagline}
-        </p>
-      </section>
-
-      {/* =====================================================================
-          DUAL-DEVICE AESTHETIC VIDEO STAGE (DESKTOP FULL VIEW + FLOATING MOBILE)
-          Zero Cropping (object-contain) • Smooth Auto-Playlist of All 5 Videos
-         ===================================================================== */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 mt-8 sm:mt-10 aesthetic-reveal">
-        <div className="rounded-[36px] bg-white/75 backdrop-blur-2xl border border-white shadow-[0_30px_80px_rgba(15,61,62,0.10)] p-4 sm:p-7 lg:p-9">
-          {/* Top Playlist & Playback Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-[#ECE6DA]">
-            {/* 5 Video Chapter Pills (Auto-Advances Smoothly) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
-              {reels.map((reel, idx) => {
-                const isActive = idx === activeReelIndex;
-                return (
-                  <button
-                    key={reel.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveReelIndex(idx);
-                      setIsPlaying(true);
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${
-                      isActive
-                        ? "bg-[#0F3D3E] text-[#FAF7F2] shadow-md scale-[1.02]"
-                        : "bg-[#F5F1E8] text-[#5B5346] hover:bg-[#EAE2D3]"
-                    }`}
-                  >
-                    <span
-                      className={`text-[10px] font-extrabold ${
-                        isActive ? "text-[#E6C78A]" : "text-[#8A6D3B]"
-                      }`}
-                    >
-                      {reel.stepNumber}
-                    </span>
-                    <span>{reel.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Play/Pause, Sound & Fullscreen Buttons */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleTogglePlayAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0F3D3E] hover:bg-[#165456] text-white text-xs font-bold transition-colors"
-              >
-                {isPlaying ? (
-                  <Pause className="w-3.5 h-3.5" />
-                ) : (
-                  <Play className="w-3.5 h-3.5" />
-                )}
-                <span>{isPlaying ? "Pause" : "Auto-Play"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsMuted((m) => !m)}
-                className="w-8 h-8 rounded-full bg-[#F5F1E8] hover:bg-[#EAE2D3] text-[#0F3D3E] flex items-center justify-center transition-colors"
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? (
-                  <VolumeX className="w-4 h-4" />
-                ) : (
-                  <Volume2 className="w-4 h-4" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFullScreen}
-                className="w-8 h-8 rounded-full bg-[#F5F1E8] hover:bg-[#EAE2D3] text-[#0F3D3E] flex items-center justify-center transition-colors"
-                title="Full Screen Desktop Video"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* DUAL STAGE GRID: LEFT = FULL DESKTOP VIDEO (NO CROP), RIGHT = FLOATING MOBILE VIDEO */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-center">
-            {/* 1. DESKTOP STUDIO FRAME (9 Cols — Zero Cropping, Full Page Visible) */}
-            <div className="lg:col-span-9 space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0F3D3E]">
-                  <Monitor className="w-3.5 h-3.5 text-[#8A6D3B]" />
-                  <span>
-                    Desktop View • {currentReel.stepNumber}. {currentReel.title}
-                  </span>
+          <div
+            style={{
+              transform: tilt.hovered
+                ? "translateZ(32px) scale(1.03)"
+                : "translateZ(0px) scale(1)",
+            }}
+            className="relative mx-auto w-[94%] transition-transform duration-300 ease-out"
+          >
+            <div className="rounded-t-[11px] bg-[#182226] p-[4px] pb-[5px] border-t border-x border-white/50 shadow-[0_14px_26px_rgba(12,52,58,0.22)]">
+              <div className="flex items-center justify-between px-2 py-[3px] bg-[#0F171A] rounded-t-[7px]">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 </div>
-                <span className="text-[11px] text-slate-500 hidden sm:inline">
-                  {currentReel.subtitle}
-                </span>
+                <span className="w-8 h-1 rounded-full bg-white/20" />
               </div>
 
               <div
-                ref={desktopFrameRef}
-                className="rounded-[24px] overflow-hidden bg-[#141D1E] border-[3px] border-[#E7DEC8] shadow-[0_24px_60px_rgba(15,61,62,0.16)]"
+                className={`relative h-[108px] sm:h-[114px] overflow-hidden rounded-b-[6px] bg-gradient-to-r ${screenBg} grid grid-cols-12 items-center`}
               >
-                {/* Minimal Aesthetic Browser Bar */}
-                <div className="bg-[#FAF7F2] px-4 py-2 flex items-center justify-between border-b border-[#ECE5D5]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#E5989B]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#E6C78A]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#84A98C]" />
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    https://{activeWebsite.websiteSlug}.ourwebsite.app
-                  </span>
-                  <span className="text-[10px] font-extrabold text-[#8A6D3B]">
-                    {activeReelIndex + 1} / {reels.length}
-                  </span>
+                <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+                  <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent anim-glint" />
                 </div>
 
-                {/* Full Uncropped Video Container (object-contain ensures 0% cutting!) */}
-                <div className="relative w-full aspect-[16/10] bg-[#0D1718] flex items-center justify-center overflow-hidden">
-                  <video
-                    ref={desktopVideoRef}
-                    key={currentReel.videoUrl}
-                    src={currentReel.videoUrl}
-                    poster={currentReel.posterUrl}
-                    autoPlay
-                    muted={isMuted}
-                    playsInline
-                    loop={reels.length === 1}
-                    onEnded={() => {
-                      // Automatically moves to the next video when current video finishes!
-                      setActiveReelIndex((prev) => (prev + 1) % reels.length);
-                    }}
-                    onClick={handleTogglePlayAll}
-                    className="w-full h-full object-contain cursor-pointer"
+                <div className="col-span-6 pl-3 pr-1 py-2 z-10 text-left space-y-1">
+                  <h4 className="font-serif text-[12px] sm:text-[13px] font-bold text-white leading-[1.12]">
+                    {item.title}
+                  </h4>
+                  <p className="text-[7.5px] sm:text-[8px] text-white/85 leading-tight line-clamp-1">
+                    {item.screenSubtitle || item.techTag}
+                  </p>
+                  <div className="pt-1 flex items-center gap-1">
+                    <span className="w-4 h-1.5 rounded-full bg-[#FBBF24]" />
+                    <span className="w-2 h-1.5 rounded-full bg-white/45" />
+                  </div>
+                </div>
+
+                <div className="col-span-6 h-full relative overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-[135%] object-cover object-top laptop-scroll-preview"
                   />
+                  <div className="absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-black/30 to-transparent" />
                 </div>
               </div>
             </div>
 
-            {/* 2. FLOATING MOBILE DEVICE FRAME (3 Cols — Side-by-Side Responsive Preview) */}
-            <div className="lg:col-span-3 flex flex-col items-center space-y-2.5">
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0F3D3E]">
-                <Smartphone className="w-3.5 h-3.5 text-[#8A6D3B]" />
-                <span>Mobile View</span>
-              </div>
-
-              <div
-                ref={mobileFrameRef}
-                className="w-full max-w-[255px] rounded-[36px] p-[6px] bg-gradient-to-b from-[#DFD3BC] via-[#C8B692] to-[#9E8B66] shadow-[0_26px_55px_rgba(15,61,62,0.22)]"
-              >
-                <div className="rounded-[30px] overflow-hidden bg-[#0D1718] border border-black/40">
-                  {/* Sleek Phone Top Notch */}
-                  <div className="bg-[#0D1718] pt-2 pb-1.5 flex justify-center">
-                    <span className="w-16 h-3.5 rounded-full bg-black border border-white/10" />
-                  </div>
-
-                  {/* Mobile Aspect Ratio Video (Zero Cropping) */}
-                  <div className="relative w-full aspect-[9/18] bg-[#0D1718] flex items-center justify-center overflow-hidden">
-                    <video
-                      ref={mobileVideoRef}
-                      src={activeWebsite.mobileVideoUrl}
-                      poster={activeWebsite.mobilePosterUrl}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-
-                  {/* Phone Bottom Indicator */}
-                  <div className="bg-[#0D1718] py-2 flex justify-center">
-                    <span className="w-20 h-1 rounded-full bg-white/30" />
-                  </div>
-                </div>
-              </div>
+            <div className="relative mx-auto w-[108%] -left-[4%] h-[7px] rounded-b-xl bg-gradient-to-r from-[#9FB0B8] via-[#FFFFFF] to-[#9FB0B8] shadow-[0_6px_14px_rgba(15,61,70,0.2)] flex items-center justify-center">
+              <div className="w-9 h-[2.5px] rounded-b bg-[#7E9099]" />
             </div>
           </div>
         </div>
-      </section>
 
-      {/* =====================================================================
-          AESTHETIC EDITORIAL DETAILS & LAUNCH PACKAGE SECTION
-         ===================================================================== */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 mt-10 aesthetic-reveal">
-        <div className="rounded-[34px] bg-white border border-[#EAE2D3] p-6 sm:p-10 shadow-[0_20px_55px_rgba(15,61,62,0.06)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left 7 Cols: Highlights & Tech */}
-          <div className="lg:col-span-7 space-y-5">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F5F1E8] text-[#8A6D3B] text-[10.5px] font-extrabold uppercase tracking-widest">
-              <Layers className="w-3.5 h-3.5" />
-              <span>COMPLETE SOURCE CODE + ADMIN DASHBOARD</span>
+        <div className="relative rounded-b-[19px] bg-gradient-to-r from-[#FFFFFF] via-[#F7FCFB] to-[#DDF5F0] px-3 py-3 overflow-hidden flex items-center justify-between gap-2">
+          <div className="relative z-10 flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-[#EAF7F5] border border-[#CBE6EC] flex items-center justify-center shrink-0">
+              {renderCategoryIcon(item.categorySlug)}
             </div>
-
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#0F3D3E]">
-              Launch {activeWebsite.title} for Your Brand
-            </h2>
-
-            <div className="flex flex-wrap gap-2">
-              {activeWebsite.techStack.map((tech) => (
-                <span
-                  key={tech}
-                  className="px-3.5 py-1 rounded-full bg-[#F4F8F7] border border-[#DCEAE8] text-[#0F3D3E] text-xs font-bold"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {activeWebsite.features.map((feat, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#EFE8DA] flex items-start gap-2.5 text-xs text-slate-700"
-                >
-                  <span className="w-5 h-5 rounded-full bg-[#0F3D3E] text-[#F5E6C4] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </span>
-                  <span className="leading-relaxed">{feat}</span>
-                </div>
-              ))}
+            <div className="min-w-0">
+              <h3 className="text-[13px] sm:text-[13.5px] font-extrabold text-[#102A30] truncate group-hover:text-[#0F6E66] transition-colors leading-tight">
+                {item.title}
+              </h3>
+              <p className="text-[10px] font-medium text-slate-500 truncate mt-0.5">
+                {item.category}
+              </p>
             </div>
           </div>
 
-          {/* Right 5 Cols: Champagne & Emerald Package Card */}
-          <div className="lg:col-span-5 rounded-[28px] bg-gradient-to-b from-[#0F3D3E] to-[#09292A] text-white p-6 sm:p-7 shadow-xl space-y-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-extrabold uppercase tracking-widest text-[#E6C78A]">
-                INSTANT LAUNCH PACKAGE
+          <div className="relative z-10 flex items-center gap-2 shrink-0">
+            <div className="text-right">
+              <span className="block text-[9px] font-semibold text-slate-400 leading-none">
+                {item.priceLabel}
               </span>
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-[#E6C78A]">
-                <Star className="w-3.5 h-3.5 fill-[#E6C78A]" /> 4.9/5
+              <span className="block text-[13.5px] sm:text-[14.5px] font-extrabold text-[#0F292A] mt-0.5 leading-none">
+                {item.startingPrice}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 p-1.5 rounded-2xl bg-white/10 border border-white/10">
-              <button
-                type="button"
-                onClick={() => setPackageType("code")}
-                className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  packageType === "code"
-                    ? "bg-white text-[#0F3D3E] shadow-md"
-                    : "text-teal-100/80 hover:text-white"
-                }`}
-              >
-                Source Code
-                <span
-                  className={`block text-sm mt-0.5 ${
-                    packageType === "code"
-                      ? "text-[#8A6D3B]"
-                      : "text-[#E6C78A]"
-                  }`}
-                >
-                  ₹{activeWebsite.codePrice.toLocaleString("en-IN")}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPackageType("turnkey")}
-                className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  packageType === "turnkey"
-                    ? "bg-[#E6C78A] text-[#0F3D3E] shadow-md"
-                    : "text-teal-100/80 hover:text-white"
-                }`}
-              >
-                Full Live Setup
-                <span className="block text-sm mt-0.5 text-[#0F3D3E]">
-                  ₹{activeWebsite.turnkeyPrice.toLocaleString("en-IN")}
-                </span>
-              </button>
-            </div>
-
-            {orderSubmitted ? (
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/register?website=${activeWebsite.websiteSlug}&plan=${
-                      packageType === "turnkey"
-                        ? "business-pro"
-                        : "starter-template"
-                    }&mode=${packageType}`
-                  )
-                }
-                className="w-full py-3.5 rounded-full bg-[#E6C78A] hover:bg-[#F0D7A3] text-[#0F3D3E] font-extrabold text-xs sm:text-sm transition-colors"
-              >
-                Continue to Brand Setup →
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleProceedOrder}
-                className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-gradient-to-r from-[#E6C78A] via-[#F3DCB0] to-[#D4AF37] hover:opacity-95 text-[#0F3D3E] font-extrabold text-xs sm:text-sm shadow-lg transition-all"
-              >
-                <span>
-                  Buy &amp; Launch — ₹{finalPrice.toLocaleString("en-IN")}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-teal-100/75">
-              <ShieldCheck className="w-4 h-4 text-[#E6C78A]" />
-              <span>100% Ownership • 48-Hour Live Setup</span>
-            </div>
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#1B8A7E] to-[#0E635A] text-white flex items-center justify-center shadow-[0_5px_12px_rgba(15,110,102,0.28)] group-hover:scale-110 transition-transform">
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </span>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
 
-export default function WebsiteDetailPage() {
+function WebsitesCatalogContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
+
+  const [data, setData] = useState<WebsitesPageData>(DEFAULT_WEBSITES_PAGE_DATA);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
+  const [sortBy, setSortBy] = useState<"popular" | "low" | "high">("popular");
+  const [likedSlugs, setLikedSlugs] = useState<Record<string, boolean>>({});
+  const [heroTilt, setHeroTilt] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
+
+    fetch(`${apiUrl}/websites`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((fetched) => {
+        if (fetched) setData(fetched);
+      })
+      .catch((err) => console.error("Websites catalog API error:", err));
+  }, []);
+
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setHeroTilt({ x: x * 18, y: y * 14 });
+  };
+
+  const toggleWishlist = (e: React.MouseEvent, slug: string) => {
+    e.stopPropagation();
+    setLikedSlugs((prev) => ({ ...prev, [slug]: !prev[slug] }));
+  };
+
+  const renderCategoryTabIcon = (slug: string, isActive = false) => {
+    if (slug === "all")
+      return <LayoutGrid className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-[#0F6E66]"}`} />;
+    if (slug.includes("fashion"))
+      return <Shirt className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-sky-600"}`} />;
+    if (slug.includes("dining"))
+      return <Utensils className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-700"}`} />;
+    if (slug.includes("health"))
+      return <Plus className={`w-3.5 h-3.5 stroke-[3] shrink-0 ${isActive ? "text-white" : "text-[#0F6E66]"}`} />;
+    if (slug.includes("edu"))
+      return <GraduationCap className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-700"}`} />;
+    if (slug.includes("beauty"))
+      return <Flower2 className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-rose-500"}`} />;
+    if (slug.includes("ecommerce"))
+      return <ShoppingCart className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-[#0F6E66]"}`} />;
+    return <Camera className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-700"}`} />;
+  };
+
+  const renderBadgeIcon = (badgeText: string) => {
+    const upper = badgeText.toUpperCase();
+    if (upper.includes("BEST")) return <Flame className="w-2.5 h-2.5 text-orange-600 fill-orange-500" />;
+    if (upper.includes("LIVE") || upper.includes("DEMO")) return <Play className="w-2.5 h-2.5 text-[#142930] fill-[#142930]" />;
+    if (upper.includes("VERIF")) return <CheckCircle2 className="w-2.5 h-2.5 text-emerald-700" />;
+    if (upper.includes("TOP") || upper.includes("RATED")) return <Star className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />;
+    if (upper.includes("3D")) return <Layers className="w-2.5 h-2.5 text-[#0F6E66]" />;
+    return <Sparkles className="w-2.5 h-2.5 text-amber-600" />;
+  };
+
+  const filteredWebsites = data.websites
+    .filter((site) => {
+      const matchesCat =
+        selectedCategory === "all" || site.categorySlug === selectedCategory;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        site.title.toLowerCase().includes(q) ||
+        site.category.toLowerCase().includes(q) ||
+        site.techTag.toLowerCase().includes(q);
+      return matchesCat && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "low") return a.numericPrice - b.numericPrice;
+      if (sortBy === "high") return b.numericPrice - a.numericPrice;
+      return 0;
+    });
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAF7F2]" />}>
-      <WebsiteDetailContent />
+    <div className="relative min-h-screen bg-gradient-to-b from-[#E6F4F2] via-[#F2FAF8] to-[#DFF0EC] pb-20 text-[#102A30] overflow-x-clip">
+      <div
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={() => setHeroTilt({ x: 0, y: 0 })}
+        className="relative bg-gradient-to-r from-[#05262A] via-[#0B464B] to-[#062C30] text-white pt-9 sm:pt-12 pb-16 sm:pb-20 px-4 sm:px-8 overflow-hidden"
+      >
+        <div className="relative max-w-6xl mx-auto text-center space-y-3 sm:space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0A3D40]/90 border border-[#34D399]/40 text-[#A7F3D0] text-[10px] sm:text-[11px] font-extrabold uppercase">
+            <Layers className="w-3.5 h-3.5 text-[#34D399]" />
+            <span>{data.eyebrowLabel}</span>
+          </div>
+
+          <h1 className="font-serif text-[27px] sm:text-4xl lg:text-[44px] font-bold text-white">
+            Explore All <span className="text-[#34D399]">Ready-to-Launch</span> Websites
+          </h1>
+
+          <p className="text-teal-100/85 text-xs sm:text-[14.5px] max-w-xl mx-auto">
+            {data.subheading}
+          </p>
+
+          <div className="pt-1.5 max-w-lg mx-auto">
+            <div className="flex items-center bg-white rounded-full pl-4 pr-1.5 py-1.5 shadow-xl">
+              <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={data.searchPlaceholder}
+                className="w-full bg-transparent text-xs sm:text-[13.5px] text-[#102A30] outline-none"
+              />
+              <button
+                type="button"
+                className="w-8 h-8 rounded-full bg-[#19877B] text-white flex items-center justify-center shrink-0"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 -mt-6 relative z-30 space-y-5">
+        <div className="rounded-2xl sm:rounded-full bg-white/95 backdrop-blur-xl p-2 sm:px-3 sm:py-2 border border-white shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {data.filterTabs.map((tab) => {
+              const active = selectedCategory === tab.categorySlug;
+              return (
+                <button
+                  key={tab.categorySlug}
+                  type="button"
+                  onClick={() => setSelectedCategory(tab.categorySlug)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                    active ? "bg-[#0F6E66] text-white shadow-sm" : "text-[#102A30] hover:bg-[#EAF6F4]"
+                  }`}
+                >
+                  {renderCategoryTabIcon(tab.categorySlug, active)}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {filteredWebsites.map((item, idx) => (
+            <Catalog3DCard
+              key={item.websiteSlug}
+              item={item}
+              index={idx}
+              isLiked={Boolean(likedSlugs[item.websiteSlug])}
+              onToggleLike={toggleWishlist}
+              onNavigate={(slug) => router.push(`/websites/detail?website=${slug}`)}
+              renderCategoryIcon={(slug) => renderCategoryTabIcon(slug, false)}
+              renderBadgeIcon={renderBadgeIcon}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AllWebsitesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#E6F4F2]" />}>
+      <WebsitesCatalogContent />
     </Suspense>
   );
 }

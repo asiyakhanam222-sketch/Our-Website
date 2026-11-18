@@ -13,17 +13,22 @@ import {
   Sparkles,
   Play,
   Pause,
-  ChevronLeft,
-  ChevronRight,
   Maximize2,
   X,
+  Smartphone,
+  Monitor,
   Layers,
-  Award,
+  Star,
+  Wand2,
+  Zap,
+  Globe,
+  Palette,
+  ShoppingBag,
 } from "lucide-react";
 
-export interface LuxuryPageSlide {
+export interface AestheticPageSlide {
   id: string;
-  tag: string;
+  step: string;
   title: string;
   subtitle: string;
   imageUrl: string;
@@ -40,7 +45,7 @@ export interface WebsiteDetailItem {
   turnkeyPrice: number;
   speedScore: string;
   badgeText: string;
-  slides: LuxuryPageSlide[];
+  slides: AestheticPageSlide[];
   techStack: string[];
   features: string[];
 }
@@ -49,8 +54,9 @@ const DEFAULT_WEBSITE_CATALOG: WebsiteDetailItem[] = [
   {
     websiteSlug: "zarii-boutique",
     title: "Zarii Boutique",
-    tagline: "Bespoke Bridal Couture, Ethnic Store & Custom Tailoring Experience",
-    category: "Fashion & Luxury Retail",
+    tagline:
+      "Bespoke Bridal Couture, Ethnic Store & Custom Tailoring Experience",
+    category: "Fashion & Luxury Couture",
     categorySlug: "fashion-lifestyle",
     codePrice: 9999,
     turnkeyPrice: 12999,
@@ -59,49 +65,49 @@ const DEFAULT_WEBSITE_CATALOG: WebsiteDetailItem[] = [
     slides: [
       {
         id: "home",
-        tag: "01 • LANDING EXPERIENCE",
-        title: "Home Page — Editorial Hero & Categories",
-        subtitle: "Luxury hero banner, curated category cards & bridal booking",
+        step: "01",
+        title: "Home & Editorial Hero",
+        subtitle: "Luxury couture landing banner & curated category cards",
         imageUrl: "/home.jpeg",
         fallbackUrl: "/home.jpeg",
       },
       {
         id: "home2",
-        tag: "02 • BRAND TRUST & SOCIAL PROOF",
-        title: "Home Page — Bulk Orders & Testimonials",
-        subtitle: "Wholesale inquiry section, verified customer reviews & footer",
+        step: "02",
+        title: "Bulk Orders & Reviews",
+        subtitle: "Wholesale inquiry showcase, verified testimonials & footer",
         imageUrl: "/home2.jpeg",
         fallbackUrl: "/home2.jpeg",
       },
       {
         id: "shop",
-        tag: "03 • E-COMMERCE STOREFRONT",
-        title: "Shop Catalog — Complete Product Grid",
-        subtitle: "Category filters, instant quick-add cart & bestseller badges",
+        step: "03",
+        title: "Shop & Collection",
+        subtitle: "Complete product catalog with filters & instant quick-add",
         imageUrl: "/shop.jpeg",
         fallbackUrl: "/shop.jpeg",
       },
       {
         id: "shop2",
-        tag: "04 • CONVERSION PRODUCT PAGE",
-        title: "Product Detail — Multi-Angle Zoom & Reviews",
-        subtitle: "High-res gallery switcher, specifications & related items",
+        step: "04",
+        title: "Product Detail View",
+        subtitle: "Multi-angle zoom gallery, sizing & customer ratings",
         imageUrl: "/shop2.jpeg",
         fallbackUrl: "/shop2.jpeg",
       },
       {
         id: "gallery",
-        tag: "05 • VISUAL LOOKBOOK",
-        title: "Lookbook Gallery — Bridal & Festive Showcase",
-        subtitle: "Interactive portfolio showcase with direct slot reservation",
+        step: "05",
+        title: "Bridal Lookbook Gallery",
+        subtitle: "Interactive festive lookbook with direct slot booking",
         imageUrl: "/gallery.jpeg",
         fallbackUrl: "/gallery.jpeg",
       },
       {
         id: "aboutus",
-        tag: "06 • BRAND HERITAGE",
-        title: "About Us — Our Story & Milestones",
-        subtitle: "Founder story, mission, vision & 1000+ orders track record",
+        step: "06",
+        title: "About Us & Milestones",
+        subtitle: "Brand story, mission, vision & 1000+ orders track record",
         imageUrl: "/aboutus.jpeg",
         fallbackUrl: "/aboutus.jpeg",
       },
@@ -109,9 +115,9 @@ const DEFAULT_WEBSITE_CATALOG: WebsiteDetailItem[] = [
     techStack: ["Next.js", "Tailwind CSS", "Node.js", "MongoDB", "Razorpay"],
     features: [
       "Luxury Editorial Hero & Interactive Product Catalog",
-      "Custom Measurement & Bridal Slot Booking Engine",
-      "Direct WhatsApp Checkout + Razorpay Integration",
-      "Complete Inventory, Order & Review Admin CRM",
+      "Custom Blouse & Bridal Measurement Booking Form",
+      "Direct WhatsApp Order + Razorpay Checkout",
+      "Complete Inventory, Order & Review Admin Panel",
     ],
   },
   {
@@ -126,10 +132,10 @@ const DEFAULT_WEBSITE_CATALOG: WebsiteDetailItem[] = [
     badgeText: "TRENDING",
     slides: [
       {
-        id: "c-home",
-        tag: "01 • DINING EXPERIENCE",
-        title: "Home Page — Café & Reservations",
-        subtitle: "Artisan menu, table booking & ambiance showcase",
+        id: "cafe-1",
+        step: "01",
+        title: "Café & Dining Experience",
+        subtitle: "QR table menu & live reservation system",
         imageUrl:
           "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1400&q=85",
         fallbackUrl:
@@ -153,22 +159,29 @@ function WebsiteDetailContent() {
 
   const [catalog] = useState<WebsiteDetailItem[]>(DEFAULT_WEBSITE_CATALOG);
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [autoPlay, setAutoPlay] = useState<boolean>(true);
-  const [unfoldedSlide, setUnfoldedSlide] = useState<LuxuryPageSlide | null>(
-    null
-  );
+  const [progress, setProgress] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [imgLoadedTick, setImgLoadedTick] = useState<number>(0);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, active: false });
   const [packageType, setPackageType] = useState<"turnkey" | "code">("turnkey");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
 
-  const webglBgRef = useRef<HTMLDivElement | null>(null);
-  const centerCardRef = useRef<HTMLDivElement | null>(null);
-  const shimmerRef = useRef<HTMLDivElement | null>(null);
-  const unfoldModalRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const webglRef = useRef<HTMLDivElement | null>(null);
+  const desktopViewportRef = useRef<HTMLDivElement | null>(null);
+  const desktopImgRef = useRef<HTMLImageElement | null>(null);
+  const mobileViewportRef = useRef<HTMLDivElement | null>(null);
+  const mobileImgRef = useRef<HTMLImageElement | null>(null);
+  const fullScreenViewportRef = useRef<HTMLDivElement | null>(null);
+  const fullScreenImgRef = useRef<HTMLImageElement | null>(null);
+  const sheenRef = useRef<HTMLDivElement | null>(null);
+  const mobilePhoneRef = useRef<HTMLDivElement | null>(null);
 
-  // 1. Lenis Silky Smooth Scroll
+  // 1. Lenis Silky Smooth Inertia Page Scroll
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.25,
+      duration: 1.3,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     });
@@ -184,36 +197,35 @@ function WebsiteDetailContent() {
     };
   }, []);
 
-  // 2. Three.js Ambient Luxury Gold & Aqua Particle Aurora in Stage Background
+  // 2. Three.js Luxury Background Animation (Floating Bokeh + Rotating Gold Rings)
   useEffect(() => {
-    const container = webglBgRef.current;
+    const container = webglRef.current;
     if (!container) return;
 
     const width = container.clientWidth || 1200;
-    const height = container.clientHeight || 680;
+    const height = container.clientHeight || 750;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 8;
+    camera.position.z = 10;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    const particleCount = 90;
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
+    // Floating Champagne Gold & Emerald Particles
+    const count = 85;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const gold = new THREE.Color("#C8A45D");
+    const emerald = new THREE.Color("#2A9D8F");
 
-    const goldColor = new THREE.Color("#FDE68A");
-    const aquaColor = new THREE.Color("#5EEAD4");
-
-    for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 16;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 9;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 5;
-
-      const c = i % 2 === 0 ? goldColor : aquaColor;
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 20;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+      const c = i % 2 === 0 ? gold : emerald;
       colors[i * 3] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
@@ -224,23 +236,46 @@ function WebsiteDetailContent() {
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 0.08,
+      size: 0.11,
       vertexColors: true,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.5,
     });
 
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
+    // Architectural Luxury Orbital Ring in Background
+    const ringGeo = new THREE.TorusGeometry(4.4, 0.015, 16, 120);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xc8a45d,
+      transparent: true,
+      opacity: 0.22,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI * 0.35;
+    scene.add(ring);
+
+    const ring2Geo = new THREE.TorusGeometry(5.6, 0.012, 16, 120);
+    const ring2Mat = new THREE.MeshBasicMaterial({
+      color: 0x2a9d8f,
+      transparent: true,
+      opacity: 0.18,
+    });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.rotation.x = -Math.PI * 0.28;
+    scene.add(ring2);
+
     let animId: number;
     const clock = new THREE.Clock();
-
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
-      points.rotation.y = t * 0.05;
-      points.rotation.x = Math.sin(t * 0.25) * 0.08;
+      points.rotation.y = t * 0.035;
+      points.position.y = Math.sin(t * 0.4) * 0.25;
+      ring.rotation.z = t * 0.08;
+      ring.rotation.y = Math.sin(t * 0.3) * 0.2;
+      ring2.rotation.z = -t * 0.06;
       renderer.render(scene, camera);
     };
     animate();
@@ -256,12 +291,99 @@ function WebsiteDetailContent() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
+      geometry.dispose();
+      material.dispose();
+      ringGeo.dispose();
+      ringMat.dispose();
+      ring2Geo.dispose();
+      ring2Mat.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
     };
   }, []);
+
+  // 3. GSAP Background Auroras, Side Floating Cards & Light Beam Rails
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".aesthetic-stagger", {
+        y: 28,
+        opacity: 0,
+        duration: 0.95,
+        stagger: 0.12,
+        ease: "power3.out",
+      });
+
+      // Ambient Background Aurora Breathing Motion
+      gsap.to(".bg-aurora-orb-1", {
+        x: 60,
+        y: 40,
+        scale: 1.15,
+        duration: 8,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      gsap.to(".bg-aurora-orb-2", {
+        x: -55,
+        y: -35,
+        scale: 1.18,
+        duration: 9.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      // Left & Right Side Floating Luxury Cards
+      gsap.to(".side-float-left", {
+        y: -14,
+        x: 4,
+        duration: 3.8,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: 0.6,
+      });
+
+      gsap.to(".side-float-right", {
+        y: 14,
+        x: -4,
+        duration: 4.1,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: 0.6,
+      });
+
+      // Side Vertical Light Beams
+      gsap.fromTo(
+        ".side-beam-pulse",
+        { yPercent: -100 },
+        {
+          yPercent: 250,
+          duration: 4.5,
+          repeat: -1,
+          ease: "none",
+          stagger: 1.5,
+        }
+      );
+
+      // Gentle Mobile iPhone Levitation
+      if (mobilePhoneRef.current) {
+        gsap.to(mobilePhoneRef.current, {
+          y: -10,
+          duration: 3.6,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+    }, pageRef);
+
+    return () => ctx.revert();
+  }, [websiteSlug]);
 
   const activeWebsite =
     catalog.find((item) => item.websiteSlug === websiteSlug) || catalog[0];
@@ -272,50 +394,181 @@ function WebsiteDetailContent() {
   const prevSlide = slides[(activeIndex - 1 + totalSlides) % totalSlides];
   const nextSlide = slides[(activeIndex + 1) % totalSlides];
 
-  // 3. GSAP Luxury Entrance & Glass Light Sweep on Every Slide Transition
+  // 4. Slow, Luxurious 10-Second Zoom-In -> Full-Page Glide -> Zoom-Out Choreography
+  // Uses exact uncropped image heights so Desktop & Mobile NEVER cut off!
   useEffect(() => {
-    if (centerCardRef.current) {
+    const dImg = desktopImgRef.current;
+    const dBox = desktopViewportRef.current;
+    const mImg = mobileImgRef.current;
+    const mBox = mobileViewportRef.current;
+    const fsImg = fullScreenImgRef.current;
+    const fsBox = fullScreenViewportRef.current;
+    const sheen = sheenRef.current;
+
+    const getDesktopMaxY = () => {
+      if (!dImg || !dBox) return -180;
+      const diff = dBox.clientHeight - dImg.offsetHeight;
+      return diff < -20 ? diff : -160;
+    };
+
+    const getMobileMaxY = () => {
+      if (!mImg || !mBox) return -140;
+      const diff = mBox.clientHeight - mImg.offsetHeight;
+      return diff < -20 ? diff : -120;
+    };
+
+    const getFullScreenMaxY = () => {
+      if (!fsImg || !fsBox) return -240;
+      const diff = fsBox.clientHeight - fsImg.offsetHeight;
+      return diff < -20 ? diff : -220;
+    };
+
+    const tl = gsap.timeline({
+      paused: !isPlaying,
+      onUpdate: () => {
+        setProgress(tl.progress() * 100);
+      },
+      onComplete: () => {
+        if (isPlaying) {
+          setActiveIndex((prev) => (prev + 1) % totalSlides);
+        }
+      },
+    });
+
+    // Subtle glass sheen sweep across desktop frame
+    if (sheen) {
       gsap.fromTo(
-        centerCardRef.current,
-        { opacity: 0.35, scale: 0.94, y: 18 },
+        sheen,
+        { xPercent: -150 },
+        { xPercent: 280, duration: 2.2, ease: "power2.inOut" }
+      );
+    }
+
+    // DESKTOP CHOREOGRAPHY (10 Seconds Total — Slow, Smooth, Uncropped):
+    // Phase 1 (0s -> 3.0s): Silky Fade-In + Gentle Zoom-In on Top Hero
+    // Phase 2 (3.0s -> 7.8s): Slow Top-to-Bottom Glide across entire page
+    // Phase 3 (7.8s -> 10.0s): Graceful Zoom-Out to reveal full section before next slide
+    if (dImg) {
+      tl.fromTo(
+        dImg,
+        { opacity: 0.2, scale: 1.0, y: 0, transformOrigin: "top center" },
         {
           opacity: 1,
-          scale: 1,
+          scale: 1.08,
           y: 0,
-          duration: 0.85,
-          ease: "expo.out",
-        }
-      );
+          duration: 3.0,
+          ease: "power2.inOut",
+        },
+        0
+      )
+        .to(
+          dImg,
+          {
+            y: getDesktopMaxY,
+            scale: 1.04,
+            duration: 4.8,
+            ease: "sine.inOut",
+          },
+          3.0
+        )
+        .to(
+          dImg,
+          {
+            scale: 1.0,
+            duration: 2.2,
+            ease: "power2.out",
+          },
+          7.8
+        );
     }
 
-    if (shimmerRef.current) {
-      gsap.fromTo(
-        shimmerRef.current,
-        { xPercent: -140 },
-        { xPercent: 260, duration: 1.4, ease: "power2.inOut" }
-      );
+    // MOBILE CHOREOGRAPHY (10 Seconds Total — Zero Left/Right Cropping!):
+    // Full width fits inside iPhone cleanly (w-full h-auto), gliding slowly top-to-bottom with gentle zoom
+    if (mImg) {
+      tl.fromTo(
+        mImg,
+        { opacity: 0.25, scale: 1.0, y: 0, transformOrigin: "top center" },
+        {
+          opacity: 1,
+          scale: 1.04,
+          y: 0,
+          duration: 2.8,
+          ease: "power2.inOut",
+        },
+        0
+      )
+        .to(
+          mImg,
+          {
+            y: getMobileMaxY,
+            scale: 1.02,
+            duration: 5.0,
+            ease: "sine.inOut",
+          },
+          2.8
+        )
+        .to(
+          mImg,
+          {
+            scale: 1.0,
+            duration: 2.2,
+            ease: "power2.out",
+          },
+          7.8
+        );
     }
-  }, [activeIndex]);
 
-  // 4. Smooth Automatic Stage Progression
-  useEffect(() => {
-    if (!autoPlay || unfoldedSlide) return;
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % totalSlides);
-    }, 4200);
-    return () => clearInterval(timer);
-  }, [autoPlay, unfoldedSlide, totalSlides]);
-
-  // GSAP Full-Page Unfold Modal Animation
-  useEffect(() => {
-    if (unfoldedSlide && unfoldModalRef.current) {
-      gsap.fromTo(
-        unfoldModalRef.current,
-        { opacity: 0, scale: 0.95 },
-        { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }
-      );
+    // FULL-SCREEN THEATER CHOREOGRAPHY
+    if (fsImg) {
+      tl.fromTo(
+        fsImg,
+        { opacity: 0.25, scale: 1.0, y: 0, transformOrigin: "top center" },
+        {
+          opacity: 1,
+          scale: 1.07,
+          y: 0,
+          duration: 3.0,
+          ease: "power2.inOut",
+        },
+        0
+      )
+        .to(
+          fsImg,
+          {
+            y: getFullScreenMaxY,
+            scale: 1.03,
+            duration: 4.8,
+            ease: "sine.inOut",
+          },
+          3.0
+        )
+        .to(
+          fsImg,
+          {
+            scale: 1.0,
+            duration: 2.2,
+            ease: "power2.out",
+          },
+          7.8
+        );
     }
-  }, [unfoldedSlide]);
+
+    return () => {
+      tl.kill();
+    };
+  }, [activeIndex, isPlaying, isFullScreen, totalSlides, imgLoadedTick]);
+
+  const handleStageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({
+      rotateX: -(y * 4),
+      rotateY: x * 5,
+      active: true,
+    });
+  };
 
   const finalPrice =
     packageType === "turnkey"
@@ -343,282 +596,415 @@ function WebsiteDetailContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#051F24] text-white pb-24 selection:bg-amber-300 selection:text-[#051F24]">
-      {/* LUXURY DARK TEAL & GOLD STAGE SECTION */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#04191D] via-[#082E35] to-[#0D4650] pt-5 pb-16">
-        {/* Three.js Ambient Gold & Aqua Particles */}
-        <div
-          ref={webglBgRef}
-          className="pointer-events-none absolute inset-0 z-0 opacity-85"
-        />
+    <div
+      ref={pageRef}
+      className="relative min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F1F8F7] to-[#FFFFFF] text-[#112A2C] pb-24 overflow-x-clip selection:bg-[#0F3D3E] selection:text-[#F5E6C4]"
+    >
+      {/* =====================================================================
+          MULTI-LAYERED BACKGROUND & SIDE MARGIN ANIMATIONS
+         ===================================================================== */}
+      {/* 1. Three.js WebGL Bokeh Particles & Orbital Rings */}
+      <div
+        ref={webglRef}
+        className="pointer-events-none fixed inset-0 z-0 opacity-90"
+      />
 
-        {/* Ambient Radial Spotlight */}
-        <div className="pointer-events-none absolute top-24 left-1/2 -translate-x-1/2 w-[680px] h-[420px] rounded-full bg-[#2DD4BF]/15 blur-[130px]" />
+      {/* 2. Drifting Ambient Aurora Gradient Orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="bg-aurora-orb-1 absolute -top-28 right-6 w-[500px] h-[500px] rounded-full bg-[#E8D5B7]/45 blur-[130px]" />
+        <div className="bg-aurora-orb-2 absolute top-64 -left-24 w-[480px] h-[480px] rounded-full bg-[#99E2D8]/40 blur-[130px]" />
+      </div>
 
-        {/* Top Luxury Header Bar */}
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between gap-4">
+      {/* 3. Left & Right Vertical Architectural Light Rails */}
+      <div className="pointer-events-none hidden xl:block fixed inset-y-0 left-7 w-[1px] bg-[#DFD6C3]/60 z-0 overflow-hidden">
+        <div className="side-beam-pulse w-full h-32 bg-gradient-to-b from-transparent via-[#B68D40] to-transparent" />
+      </div>
+      <div className="pointer-events-none hidden xl:block fixed inset-y-0 right-7 w-[1px] bg-[#DFD6C3]/60 z-0 overflow-hidden">
+        <div className="side-beam-pulse w-full h-32 bg-gradient-to-b from-transparent via-[#2A9D8F] to-transparent" />
+      </div>
+
+      {/* MINIMAL GLASS TOP BAR */}
+      <header className="sticky top-0 z-40 bg-[#FAF7F2]/85 backdrop-blur-xl border-b border-[#E5DEC9]/75 px-4 sm:px-8 py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => router.push("/websites")}
-            className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white text-teal-50 hover:text-[#051F24] backdrop-blur-md border border-white/15 text-xs font-extrabold transition-all"
+            className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white hover:bg-[#0F3D3E] text-[#0F3D3E] hover:text-white border border-[#DFD6C3] text-xs font-bold shadow-2xs transition-all"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-amber-300 group-hover:text-[#136D7E] group-hover:-translate-x-0.5 transition-all" />
-            <span>Back to Catalog</span>
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to All Websites</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-300/15 border border-amber-300/40 text-amber-200 text-[10.5px] font-extrabold tracking-widest uppercase">
-              <Award className="w-3.5 h-3.5 text-amber-300" />
+          <div className="flex items-center gap-2.5">
+            <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EFE9DC] text-[#6E5631] text-[10.5px] font-extrabold tracking-widest uppercase">
+              <Sparkles className="w-3 h-3 text-[#B68D40]" />
               <span>{activeWebsite.badgeText}</span>
+            </span>
+            <span className="px-3 py-1 rounded-full bg-[#E6F3F1] text-[#0F3D3E] text-[10.5px] font-extrabold">
+              Speed {activeWebsite.speedScore}
             </span>
           </div>
         </div>
+      </header>
 
-        {/* Title & Editorial Subtitle */}
-        <div className="relative z-20 max-w-3xl mx-auto text-center px-4 mt-6 space-y-2.5">
-          <p className="text-[11px] font-extrabold tracking-[0.25em] uppercase text-teal-200/80">
-            {activeWebsite.category} • GOOGLE SPEED {activeWebsite.speedScore}
-          </p>
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
-            {activeWebsite.title}
-          </h1>
-          <p className="text-xs sm:text-base text-teal-100/80 max-w-xl mx-auto leading-relaxed">
-            {activeWebsite.tagline}
-          </p>
+      {/* EDITORIAL AESTHETIC HERO HEADER */}
+      <section className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-8 pt-8 sm:pt-11 space-y-3 aesthetic-stagger">
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/85 border border-[#E5DEC9] text-[#8A6D3B] text-[10.5px] font-extrabold tracking-[0.22em] uppercase shadow-2xs">
+          <Wand2 className="w-3 h-3 text-[#B68D40]" />
+          <span>{activeWebsite.category}</span>
         </div>
 
-        {/* ===================================================================
-            3D SPATIAL LUXURY CASCADE STAGE (Left Wing + Center Hero + Right Wing)
-            All Pages Flow Smoothly with Depth, Reflection Sweep & One-Click Unfold
-           =================================================================== */}
-        <div className="relative z-20 max-w-7xl mx-auto mt-10 px-4 sm:px-8">
-          <div className="relative flex items-center justify-center min-h-[430px] sm:min-h-[540px] [perspective:1800px]">
-            {/* LEFT WING CARD (Previous Page in 3D Depth) */}
-            {totalSlides > 1 && (
-              <div
-                onClick={() => {
-                  setAutoPlay(false);
-                  setActiveIndex(
-                    (prev) => (prev - 1 + totalSlides) % totalSlides
-                  );
-                }}
-                style={{
-                  transform:
-                    "translateX(-58%) translateZ(-160px) rotateY(22deg) scale(0.84)",
-                }}
-                className="hidden lg:block absolute w-[480px] h-[420px] rounded-[24px] overflow-hidden border border-white/20 bg-[#04191D] opacity-45 hover:opacity-75 cursor-pointer shadow-2xl transition-all duration-700 ease-out"
-              >
-                <img
-                  src={prevSlide.imageUrl}
-                  onError={(e) => {
-                    e.currentTarget.src = prevSlide.fallbackUrl;
-                  }}
-                  alt={prevSlide.title}
-                  className="w-full h-full object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#04191D]/80 via-transparent to-[#04191D]/40" />
-              </div>
-            )}
+        <h1 className="font-serif text-4xl sm:text-5xl lg:text-[56px] font-bold text-[#0F3D3E] leading-[1.08] tracking-tight">
+          {activeWebsite.title}
+        </h1>
 
-            {/* CENTER HERO STAGE CARD (Active Page with Gold Rim & Shimmer) */}
-            <div
-              ref={centerCardRef}
-              onClick={() => setUnfoldedSlide(currentSlide)}
-              className="group relative z-30 w-full max-w-[660px] rounded-[28px] p-[2px] bg-gradient-to-b from-amber-200/80 via-teal-300/40 to-white/10 shadow-[0_35px_90px_rgba(0,0,0,0.65)] cursor-pointer"
-            >
-              <div className="relative rounded-[26px] overflow-hidden bg-[#062227]">
-                {/* Glass Light Sweep Shimmer */}
-                <div
-                  ref={shimmerRef}
-                  className="pointer-events-none absolute inset-y-0 w-1/3 z-30 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-[-20deg]"
-                />
+        <p className="text-xs sm:text-[15px] text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          {activeWebsite.tagline}
+        </p>
+      </section>
 
-                {/* Top Luxury Glass Info Strip */}
-                <div className="bg-[#051B20]/90 backdrop-blur-xl px-5 py-3 border-b border-white/10 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="block text-[9.5px] font-extrabold tracking-[0.2em] uppercase text-amber-300">
-                      {currentSlide.tag}
-                    </span>
-                    <h2 className="text-xs sm:text-sm font-bold text-white truncate">
-                      {currentSlide.title}
-                    </h2>
-                  </div>
-
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 group-hover:bg-amber-300 text-white group-hover:text-[#051F24] text-[10.5px] font-extrabold transition-all shrink-0">
-                    <Maximize2 className="w-3 h-3" />
-                    <span>Unfold Full Page</span>
-                  </span>
-                </div>
-
-                {/* High-Res Full-Width Screenshot Viewport */}
-                <div className="relative h-[370px] sm:h-[460px] w-full overflow-hidden bg-white">
-                  <img
-                    src={currentSlide.imageUrl}
-                    onError={(e) => {
-                      e.currentTarget.src = currentSlide.fallbackUrl;
-                    }}
-                    alt={currentSlide.title}
-                    className="w-full h-auto min-h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-1000 ease-out"
-                  />
-
-                  {/* Subtle Bottom Caption Gradient */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#04191D] via-[#04191D]/75 to-transparent pt-12 pb-4 px-5 flex items-end justify-between gap-3">
-                    <p className="text-xs text-teal-50/90 max-w-md">
-                      {currentSlide.subtitle}
-                    </p>
-                    <span className="text-[10.5px] font-extrabold text-amber-300 shrink-0">
-                      Click to View Full Length →
-                    </span>
-                  </div>
-                </div>
-              </div>
+      {/* =====================================================================
+          DUAL-DEVICE LIVE ANIMATED STUDIO STAGE + SIDE FLOATING GLASS WIDGETS
+         ===================================================================== */}
+      <section className="relative z-10 max-w-[1360px] mx-auto px-4 sm:px-8 mt-8 sm:mt-10 aesthetic-stagger">
+        {/* LEFT FLOATING SIDE BADGES (Visible on Wide Desktop) */}
+        <div className="hidden 2xl:flex flex-col gap-5 absolute -left-2 top-28 z-30 pointer-events-none">
+          <div className="side-float-left rounded-2xl bg-white/90 backdrop-blur-xl border border-[#E5DEC9] p-3.5 shadow-[0_14px_35px_rgba(15,61,62,0.10)] flex items-center gap-3 w-52">
+            <div className="w-9 h-9 rounded-xl bg-[#0F3D3E] text-[#E6C78A] flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
             </div>
-
-            {/* RIGHT WING CARD (Next Page in 3D Depth) */}
-            {totalSlides > 1 && (
-              <div
-                onClick={() => {
-                  setAutoPlay(false);
-                  setActiveIndex((prev) => (prev + 1) % totalSlides);
-                }}
-                style={{
-                  transform:
-                    "translateX(58%) translateZ(-160px) rotateY(-22deg) scale(0.84)",
-                }}
-                className="hidden lg:block absolute w-[480px] h-[420px] rounded-[24px] overflow-hidden border border-white/20 bg-[#04191D] opacity-45 hover:opacity-75 cursor-pointer shadow-2xl transition-all duration-700 ease-out"
-              >
-                <img
-                  src={nextSlide.imageUrl}
-                  onError={(e) => {
-                    e.currentTarget.src = nextSlide.fallbackUrl;
-                  }}
-                  alt={nextSlide.title}
-                  className="w-full h-full object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-gradient-to-l from-[#04191D]/80 via-transparent to-[#04191D]/40" />
-              </div>
-            )}
+            <div>
+              <p className="text-[11px] font-extrabold text-[#0F3D3E]">
+                {activeWebsite.speedScore} Speed Score
+              </p>
+              <p className="text-[10px] text-slate-500">Instant Page Load</p>
+            </div>
           </div>
 
-          {/* LUXURY TIMELINE & CONTROLS BAR */}
-          <div className="max-w-3xl mx-auto mt-6 rounded-full bg-white/10 backdrop-blur-xl border border-white/15 p-2 flex items-center justify-between gap-2 shadow-xl">
-            <button
-              type="button"
-              onClick={() => {
-                setAutoPlay(false);
-                setActiveIndex(
-                  (prev) => (prev - 1 + totalSlides) % totalSlides
-                );
-              }}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-[#051F24] flex items-center justify-center transition-colors shrink-0"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+          <div className="side-float-left rounded-2xl bg-white/90 backdrop-blur-xl border border-[#E5DEC9] p-3.5 shadow-[0_14px_35px_rgba(15,61,62,0.10)] flex items-center gap-3 w-52 ml-4">
+            <div className="w-9 h-9 rounded-xl bg-[#EFE9DC] text-[#8A6D3B] flex items-center justify-center shrink-0">
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold text-[#0F3D3E]">
+                Bespoke UI/UX
+              </p>
+              <p className="text-[10px] text-slate-500">Luxury Animations</p>
+            </div>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-1">
-              {slides.map((s, idx) => {
-                const isCurrent = idx === activeIndex;
+        {/* RIGHT FLOATING SIDE BADGES (Visible on Wide Desktop) */}
+        <div className="hidden 2xl:flex flex-col gap-5 absolute -right-2 top-36 z-30 pointer-events-none">
+          <div className="side-float-right rounded-2xl bg-white/90 backdrop-blur-xl border border-[#E5DEC9] p-3.5 shadow-[0_14px_35px_rgba(15,61,62,0.10)] flex items-center gap-3 w-52">
+            <div className="w-9 h-9 rounded-xl bg-[#E6F3F1] text-[#0F3D3E] flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold text-[#0F3D3E]">
+                Full Store + CRM
+              </p>
+              <p className="text-[10px] text-slate-500">Orders &amp; Inventory</p>
+            </div>
+          </div>
+
+          <div className="side-float-right rounded-2xl bg-white/90 backdrop-blur-xl border border-[#E5DEC9] p-3.5 shadow-[0_14px_35px_rgba(15,61,62,0.10)] flex items-center gap-3 w-52 -ml-4">
+            <div className="w-9 h-9 rounded-xl bg-[#0F3D3E] text-[#E6C78A] flex items-center justify-center shrink-0">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold text-[#0F3D3E]">
+                100% Responsive
+              </p>
+              <p className="text-[10px] text-slate-500">Desktop &amp; Mobile</p>
+            </div>
+          </div>
+        </div>
+
+        {/* MAIN LUXURY GLASS SHOWCASE CONTAINER */}
+        <div className="max-w-6xl mx-auto rounded-[36px] bg-white/85 backdrop-blur-2xl border border-white shadow-[0_32px_85px_rgba(15,61,62,0.11)] p-4 sm:p-7 lg:p-9">
+          {/* Top Interactive Page Pills with Real-Time 10s Progress */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-[#ECE6DA]">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-full py-1">
+              {slides.map((slide, idx) => {
+                const isActive = idx === activeIndex;
                 return (
                   <button
-                    key={s.id}
+                    key={slide.id}
                     type="button"
                     onClick={() => {
-                      setAutoPlay(false);
                       setActiveIndex(idx);
+                      setIsPlaying(true);
                     }}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap transition-all ${
-                      isCurrent
-                        ? "bg-amber-300 text-[#051F24] shadow-md"
-                        : "text-teal-100/75 hover:text-white hover:bg-white/10"
+                    className={`relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                      isActive
+                        ? "bg-[#0F3D3E] text-[#FAF7F2] shadow-md scale-[1.03]"
+                        : "bg-[#F5F1E8] text-[#5B5346] hover:bg-[#EAE2D3]"
                     }`}
                   >
-                    {s.title.split("—")[0].trim()}
+                    {isActive && (
+                      <span
+                        style={{ width: `${progress}%` }}
+                        className="pointer-events-none absolute inset-y-0 left-0 bg-white/15"
+                      />
+                    )}
+                    <span
+                      className={`relative z-10 text-[10px] font-extrabold ${
+                        isActive ? "text-[#E6C78A]" : "text-[#8A6D3B]"
+                      }`}
+                    >
+                      {slide.step}
+                    </span>
+                    <span className="relative z-10">{slide.title}</span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            {/* Playback & Full Screen Controls */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setAutoPlay((p) => !p)}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-amber-300 flex items-center justify-center transition-colors"
-                title={autoPlay ? "Pause Auto-Tour" : "Play Auto-Tour"}
+                onClick={() => setIsPlaying((p) => !p)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0F3D3E] hover:bg-[#165456] text-white text-xs font-bold transition-colors"
               >
-                {autoPlay ? (
+                {isPlaying ? (
                   <Pause className="w-3.5 h-3.5" />
                 ) : (
                   <Play className="w-3.5 h-3.5" />
                 )}
+                <span>{isPlaying ? "Pause Tour" : "Auto-Play"}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setAutoPlay(false);
-                  setActiveIndex((prev) => (prev + 1) % totalSlides);
-                }}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-[#051F24] flex items-center justify-center transition-colors"
+                onClick={() => setIsFullScreen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#F5F1E8] hover:bg-[#EAE2D3] text-[#0F3D3E] text-xs font-bold transition-colors"
               >
-                <ChevronRight className="w-4 h-4" />
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Full Screen</span>
               </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* LOWER LUXURY PURCHASE & ARCHITECTURE SECTION */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 -mt-6 relative z-30">
-        <div className="rounded-[32px] bg-white text-[#102A30] p-6 sm:p-10 shadow-[0_25px_70px_rgba(0,0,0,0.35)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF4F7] text-[#136D7E] text-[10.5px] font-extrabold uppercase tracking-wider">
-              <Layers className="w-3.5 h-3.5" />
-              <span>FULL SOURCE CODE + ADMIN DASHBOARD</span>
+          {/* DUAL STAGE GRID: DESKTOP (8 Cols) + UNCROPPED LIVE MOBILE (4 Cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-center">
+            {/* 1. DESKTOP CINEMA ZOOM-IN / ZOOM-OUT STAGE */}
+            <div
+              onMouseMove={handleStageMouseMove}
+              onMouseLeave={() =>
+                setTilt({ rotateX: 0, rotateY: 0, active: false })
+              }
+              className="lg:col-span-8 space-y-2.5 [perspective:1600px]"
+            >
+              <div className="flex items-center justify-between px-1">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0F3D3E]">
+                  <Monitor className="w-3.5 h-3.5 text-[#8A6D3B]" />
+                  <span>
+                    Desktop View • {currentSlide.step}. {currentSlide.title}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 hidden sm:inline">
+                  {currentSlide.subtitle}
+                </span>
+              </div>
+
+              <div
+                onClick={() => setIsFullScreen(true)}
+                style={{
+                  transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`,
+                  transition: tilt.active
+                    ? "transform 0.12s ease-out"
+                    : "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
+                className="group relative rounded-[26px] overflow-hidden bg-white border-[3px] border-[#E7DEC8] shadow-[0_26px_65px_rgba(15,61,62,0.16)] cursor-pointer [transform-style:preserve-3d]"
+              >
+                {/* Glass Light Sweep Reflection */}
+                <div
+                  ref={sheenRef}
+                  className="pointer-events-none absolute inset-y-0 w-1/3 z-30 bg-gradient-to-r from-transparent via-white/35 to-transparent skew-x-[-20deg]"
+                />
+
+                {/* Pearl Browser Top Bar */}
+                <div className="bg-[#FAF7F2] px-4 py-2.5 flex items-center justify-between border-b border-[#ECE5D5]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E5989B]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E6C78A]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#84A98C]" />
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">
+                    https://{activeWebsite.websiteSlug}.ourwebsite.app
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#EFE9DC] text-[#8A6D3B] text-[9.5px] font-extrabold">
+                    PAGE {activeIndex + 1} / {totalSlides}
+                  </span>
+                </div>
+
+                {/* Uncropped Full-Width Desktop Viewport */}
+                <div
+                  ref={desktopViewportRef}
+                  className="relative w-full h-[380px] sm:h-[470px] overflow-hidden bg-[#FAF7F2]"
+                >
+                  <img
+                    ref={desktopImgRef}
+                    key={`desktop-${currentSlide.id}`}
+                    src={currentSlide.imageUrl}
+                    onLoad={() => setImgLoadedTick((t) => t + 1)}
+                    onError={(e) => {
+                      e.currentTarget.src = currentSlide.fallbackUrl;
+                    }}
+                    alt={currentSlide.title}
+                    className="w-full h-auto block will-change-transform"
+                  />
+
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute bottom-4 right-4 z-20 px-4 py-2 rounded-full bg-[#0F3D3E]/90 text-white text-xs font-extrabold backdrop-blur-md shadow-lg">
+                    Click for Full-Screen Theater →
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-[#0A252A]">
-              Own {activeWebsite.title}
+            {/* 2. UNCROPPED LIVE MOBILE IPHONE STAGE (4 Cols — Zero Side Cutting!) */}
+            <div className="lg:col-span-4 flex flex-col items-center space-y-2.5">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0F3D3E]">
+                <Smartphone className="w-3.5 h-3.5 text-[#8A6D3B]" />
+                <span>Live Mobile Preview (Full Width)</span>
+              </div>
+
+              <div
+                ref={mobilePhoneRef}
+                className="w-full max-w-[275px] rounded-[42px] p-[7px] bg-gradient-to-b from-[#E5D7BC] via-[#C8B692] to-[#9E8B66] shadow-[0_28px_60px_rgba(15,61,62,0.22)]"
+              >
+                <div className="rounded-[35px] overflow-hidden bg-white border border-white/70">
+                  {/* Sleek Dynamic Island Notch */}
+                  <div className="bg-[#FAF7F2] pt-2.5 pb-2 flex justify-center border-b border-[#EFE8DA]">
+                    <span className="w-16 h-3.5 rounded-full bg-[#1C2627]" />
+                  </div>
+
+                  {/* Uncropped Full-Width Mobile Viewport (w-full h-auto = 0% Horizontal Cut!) */}
+                  <div
+                    ref={mobileViewportRef}
+                    className="relative w-full h-[385px] sm:h-[425px] overflow-hidden bg-white"
+                  >
+                    <img
+                      ref={mobileImgRef}
+                      key={`mobile-${currentSlide.id}`}
+                      src={currentSlide.imageUrl}
+                      onLoad={() => setImgLoadedTick((t) => t + 1)}
+                      onError={(e) => {
+                        e.currentTarget.src = currentSlide.fallbackUrl;
+                      }}
+                      alt={`${currentSlide.title} Mobile`}
+                      className="w-full h-auto block will-change-transform"
+                    />
+                  </div>
+
+                  {/* iPhone Bottom Gesture Bar */}
+                  <div className="bg-[#FAF7F2] py-2 flex justify-center border-t border-[#EFE8DA]">
+                    <span className="w-20 h-1 rounded-full bg-[#1C2627]/25" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MINI NEXT/PREVIOUS THUMBNAIL STRIP BELOW STAGE */}
+          {totalSlides > 1 && (
+            <div className="mt-6 pt-5 border-t border-[#ECE6DA] flex items-center justify-between gap-4 text-xs">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveIndex((prev) => (prev - 1 + totalSlides) % totalSlides)
+                }
+                className="inline-flex items-center gap-2 text-slate-600 hover:text-[#0F3D3E] font-bold transition-colors"
+              >
+                <span>← Previous:</span>
+                <span className="text-[#8A6D3B]">{prevSlide.title}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveIndex((prev) => (prev + 1) % totalSlides)}
+                className="inline-flex items-center gap-2 text-slate-600 hover:text-[#0F3D3E] font-bold transition-colors"
+              >
+                <span>Next:</span>
+                <span className="text-[#8A6D3B]">{nextSlide.title}</span>
+                <span>→</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* =====================================================================
+          AESTHETIC EDITORIAL DETAILS & LAUNCH PACKAGE SECTION
+         ===================================================================== */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 mt-10 aesthetic-stagger">
+        <div className="rounded-[34px] bg-white border border-[#EAE2D3] p-6 sm:p-10 shadow-[0_20px_55px_rgba(15,61,62,0.06)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F5F1E8] text-[#8A6D3B] text-[10.5px] font-extrabold uppercase tracking-widest">
+              <Layers className="w-3.5 h-3.5" />
+              <span>COMPLETE SOURCE CODE + ADMIN DASHBOARD</span>
+            </div>
+
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#0F3D3E]">
+              Launch {activeWebsite.title} for Your Brand
             </h2>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {activeWebsite.techStack.map((tech) => (
                 <span
                   key={tech}
-                  className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold"
+                  className="px-3.5 py-1 rounded-full bg-[#F4F8F7] border border-[#DCEAE8] text-[#0F3D3E] text-xs font-bold"
                 >
                   {tech}
                 </span>
               ))}
             </div>
 
-            <ul className="space-y-2 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               {activeWebsite.features.map((feat, idx) => (
-                <li
+                <div
                   key={idx}
-                  className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700"
+                  className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#EFE8DA] flex items-start gap-2.5 text-xs text-slate-700"
                 >
-                  <span className="w-5 h-5 rounded-full bg-[#E5F4F6] text-[#136D7E] flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-[#0F3D3E] text-[#F5E6C4] flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
-                  <span>{feat}</span>
-                </li>
+                  <span className="leading-relaxed">{feat}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          <div className="lg:col-span-5 rounded-3xl bg-[#F4FAF9] p-5 sm:p-6 border border-teal-100 space-y-4">
-            <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-white border border-slate-200/80">
+          <div className="lg:col-span-5 rounded-[28px] bg-gradient-to-b from-[#0F3D3E] to-[#09292A] text-white p-6 sm:p-7 shadow-xl space-y-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10.5px] font-extrabold uppercase tracking-widest text-[#E6C78A]">
+                INSTANT LAUNCH PACKAGE
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-[#E6C78A]">
+                <Star className="w-3.5 h-3.5 fill-[#E6C78A]" /> 4.9/5
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 p-1.5 rounded-2xl bg-white/10 border border-white/10">
               <button
                 type="button"
                 onClick={() => setPackageType("code")}
                 className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   packageType === "code"
-                    ? "bg-[#102A30] text-white shadow-sm"
-                    : "text-slate-500"
+                    ? "bg-white text-[#0F3D3E] shadow-md"
+                    : "text-teal-100/80 hover:text-white"
                 }`}
               >
                 Source Code
-                <span className="block text-sm text-amber-400 mt-0.5">
+                <span
+                  className={`block text-sm mt-0.5 ${
+                    packageType === "code"
+                      ? "text-[#8A6D3B]"
+                      : "text-[#E6C78A]"
+                  }`}
+                >
                   ₹{activeWebsite.codePrice.toLocaleString("en-IN")}
                 </span>
               </button>
@@ -628,12 +1014,12 @@ function WebsiteDetailContent() {
                 onClick={() => setPackageType("turnkey")}
                 className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   packageType === "turnkey"
-                    ? "bg-[#136D7E] text-white shadow-sm"
-                    : "text-slate-500"
+                    ? "bg-[#E6C78A] text-[#0F3D3E] shadow-md"
+                    : "text-teal-100/80 hover:text-white"
                 }`}
               >
-                Live Setup
-                <span className="block text-sm text-amber-300 mt-0.5">
+                Full Live Setup
+                <span className="block text-sm mt-0.5 text-[#0F3D3E]">
                   ₹{activeWebsite.turnkeyPrice.toLocaleString("en-IN")}
                 </span>
               </button>
@@ -651,15 +1037,15 @@ function WebsiteDetailContent() {
                     }&mode=${packageType}`
                   )
                 }
-                className="btn-ocean-luxury w-full py-3.5 rounded-full text-xs sm:text-sm"
+                className="w-full py-3.5 rounded-full bg-[#E6C78A] hover:bg-[#F0D7A3] text-[#0F3D3E] font-extrabold text-xs sm:text-sm transition-colors"
               >
-                Continue to Setup →
+                Continue to Brand Setup →
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleProceedOrder}
-                className="btn-ocean-luxury w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-full text-xs sm:text-sm"
+                className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-gradient-to-r from-[#E6C78A] via-[#F3DCB0] to-[#D4AF37] hover:opacity-95 text-[#0F3D3E] font-extrabold text-xs sm:text-sm shadow-lg transition-all"
               >
                 <span>
                   Buy &amp; Launch — ₹{finalPrice.toLocaleString("en-IN")}
@@ -668,54 +1054,59 @@ function WebsiteDetailContent() {
               </button>
             )}
 
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-              <ShieldCheck className="w-4 h-4 text-[#136D7E]" />
-              <span>100% Ownership • 48-Hour Live Deployment</span>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-teal-100/75">
+              <ShieldCheck className="w-4 h-4 text-[#E6C78A]" />
+              <span>100% Ownership • 48-Hour Live Setup</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ONE-CLICK FULL-LENGTH PAGE UNFOLD LIGHTBOX (Clean, Zero Border, Full Vertical View) */}
-      {unfoldedSlide && (
+      {/* FULL-SCREEN EDGE-TO-EDGE CINEMA THEATER MODE (ZERO BLACK BORDERS) */}
+      {isFullScreen && (
         <div
-          ref={unfoldModalRef}
-          onClick={() => setUnfoldedSlide(null)}
-          className="fixed inset-0 z-50 bg-[#04181C]/90 backdrop-blur-xl overflow-y-auto p-3 sm:p-8 flex justify-center"
+          ref={fullScreenViewportRef}
+          className="fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-white select-none"
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-w-5xl w-full my-auto space-y-3"
+          <img
+            ref={fullScreenImgRef}
+            key={`fs-${currentSlide.id}`}
+            src={currentSlide.imageUrl}
+            onLoad={() => setImgLoadedTick((t) => t + 1)}
+            onError={(e) => {
+              e.currentTarget.src = currentSlide.fallbackUrl;
+            }}
+            alt={currentSlide.title}
+            className="w-full h-auto block will-change-transform"
+          />
+
+          <button
+            type="button"
+            onClick={() => setIsFullScreen(false)}
+            className="fixed top-4 right-4 z-50 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0F3D3E]/90 hover:bg-[#0F3D3E] text-white text-xs font-extrabold backdrop-blur-md shadow-xl transition-all"
           >
-            <div className="sticky top-2 z-30 flex items-center justify-between bg-[#062227]/90 backdrop-blur-md border border-white/15 rounded-full px-5 py-2.5 text-white shadow-2xl">
-              <div>
-                <span className="text-[10px] font-extrabold text-amber-300 uppercase tracking-widest block">
-                  {unfoldedSlide.tag}
-                </span>
-                <h3 className="text-xs sm:text-sm font-bold">
-                  {unfoldedSlide.title}
-                </h3>
-              </div>
+            <X className="w-4 h-4" />
+            <span>Exit Full Screen</span>
+          </button>
 
-              <button
-                type="button"
-                onClick={() => setUnfoldedSlide(null)}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-300 text-[#051F24] text-xs font-extrabold hover:bg-amber-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                <span>Close</span>
-              </button>
-            </div>
+          <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-2xl w-[92%] rounded-full bg-[#0F3D3E]/90 backdrop-blur-xl border border-white/15 px-4 py-2.5 text-white flex items-center justify-between gap-3 shadow-2xl">
+            <span className="text-xs font-bold truncate">
+              {currentSlide.step}. {currentSlide.title}
+            </span>
 
-            <div className="rounded-3xl overflow-hidden bg-white shadow-2xl">
-              <img
-                src={unfoldedSlide.imageUrl}
-                onError={(e) => {
-                  e.currentTarget.src = unfoldedSlide.fallbackUrl;
-                }}
-                alt={unfoldedSlide.title}
-                className="w-full h-auto block"
-              />
+            <div className="flex items-center gap-1.5">
+              {slides.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveIndex(idx)}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === activeIndex
+                      ? "w-6 bg-[#E6C78A]"
+                      : "w-2 bg-white/40 hover:bg-white/75"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -726,7 +1117,7 @@ function WebsiteDetailContent() {
 
 export default function WebsiteDetailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#051F24]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#FAF7F2]" />}>
       <WebsiteDetailContent />
     </Suspense>
   );
