@@ -1,82 +1,120 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import gsap from "gsap";
 import {
   Gem,
   Smartphone,
   SlidersHorizontal,
-  Headset,
+  Headphones,
   Zap,
   ArrowUpRight,
-  ArrowRight,
   Sparkles,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
-import ScrollReveal from "../components/ScrollReveal";
 
-export interface WhyChooseFeature {
-  icon: "gem" | "smartphone" | "sliders" | "headset" | "zap";
+export interface WhyChooseFeatureItem {
+  id: string;
+  icon: "gem" | "smartphone" | "sliders" | "headphones" | "zap";
+  tag: string;
   title: string;
   description: string;
-  actionPath: string;
+  highlightMetric: string;
 }
 
 export interface WhyChooseUsData {
   eyebrowLabel: string;
-  headingPrefix: string;
-  headingBrand: string;
-  subheading?: string;
+  headingLine1: string;
+  headingHighlight: string;
+  headingItalic: string;
+  subheading: string;
   ctaLabel: string;
   ctaPath: string;
-  features: WhyChooseFeature[];
+  features: WhyChooseFeatureItem[];
 }
 
 const DEFAULT_WHY_CHOOSE_DATA: WhyChooseUsData = {
   eyebrowLabel: "WHY CHOOSE US",
-  headingPrefix: "Why Choose",
-  headingBrand: "OUR WEBSITE?",
+  headingLine1: "Why Choose",
+  headingHighlight: "OUR",
+  headingItalic: "WEBSITE?",
   subheading:
-    "Your trusted partner for premium, customizable and business-ready website solutions.",
+    "Your trusted studio partner for architectural, customizable, and high-converting business website solutions.",
   ctaLabel: "Explore Our Standards",
-  ctaPath: "/services",
+  ctaPath: "/about",
   features: [
     {
+      id: "premium-designs",
       icon: "gem",
+      tag: "01 • CRAFT",
       title: "Premium Designs",
-      description: "Modern & high-converting templates",
-      actionPath: "/websites",
+      description:
+        "Modern & high-converting storefronts engineered with 2026 studio aesthetics.",
+      highlightMetric: "2026 Glass UI",
     },
     {
+      id: "mobile-responsive",
       icon: "smartphone",
+      tag: "02 • FLUIDITY",
       title: "Mobile Responsive",
-      description: "Pixel-perfect on every screen size",
-      actionPath: "/websites",
+      description:
+        "Pixel-perfect layouts across every iPhone, Android, tablet, and desktop screen.",
+      highlightMetric: "100% Adaptive",
     },
     {
+      id: "fully-customizable",
       icon: "sliders",
+      tag: "03 • CONTROL",
       title: "Fully Customizable",
-      description: "Edit brand colors, logo & content easily",
-      actionPath: "/services",
+      description:
+        "Edit brand colors, typography, logos, and product catalogs effortlessly.",
+      highlightMetric: "Zero Lock-In",
     },
     {
-      icon: "headset",
+      id: "dedicated-support",
+      icon: "headphones",
+      tag: "04 • CARE",
       title: "Dedicated Support",
-      description: "Direct developer assistance anytime",
-      actionPath: "/contact",
+      description:
+        "Direct full-stack developer assistance whenever you need updates or scaling.",
+      highlightMetric: "24/7 Priority",
     },
     {
+      id: "fast-delivery",
       icon: "zap",
+      tag: "05 • SPEED",
       title: "Fast Delivery",
-      description: "Take your business live in 48 hours",
-      actionPath: "/pricing",
+      description:
+        "Take your complete business website live with SSL & domain in 48 hours.",
+      highlightMetric: "48-Hr Launch",
     },
   ],
 };
 
+const CARD_GRADIENT_GLASS = [
+  "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(227,243,246,0.85) 50%, rgba(179,223,229,0.78) 100%)",
+  "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(239,248,247,0.85) 50%, rgba(193,235,227,0.78) 100%)",
+  "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(245,241,232,0.85) 50%, rgba(230,199,138,0.75) 100%)",
+  "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(242,246,252,0.85) 50%, rgba(196,218,247,0.78) 100%)",
+  "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(232,242,245,0.85) 50%, rgba(153,212,220,0.78) 100%)",
+];
+
 export default function WhyChooseUs() {
   const router = useRouter();
   const [data, setData] = useState<WhyChooseUsData>(DEFAULT_WHY_CHOOSE_DATA);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({
+    x: 120,
+    y: 90,
+  });
 
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hasAnimatedRef = useRef<boolean>(false);
+
+  // Backend API Fetch
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) return;
@@ -84,289 +122,409 @@ export default function WhyChooseUs() {
     fetch(`${apiUrl}/home/why-choose-us`)
       .then((res) => (res.ok ? res.json() : null))
       .then((fetched) => {
-        if (fetched) setData(fetched);
+        if (fetched && Array.isArray(fetched.features)) {
+          setData({ ...DEFAULT_WHY_CHOOSE_DATA, ...fetched });
+        }
       })
       .catch((err) => console.error("WhyChooseUs API error:", err));
   }, []);
 
-  const renderFeatureIcon = (
-    icon: WhyChooseFeature["icon"],
-    isFeatured: boolean
-  ) => {
-    const iconClass = isFeatured
-      ? "w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform duration-300 group-hover:scale-110"
-      : "w-5 h-5 sm:w-6 sm:h-6 text-[#136D7E] group-hover:text-white group-hover:scale-110 transition-all duration-300";
+  // Safe Entrance & Smooth Glass Animations (Zero Circular Motion)
+  useEffect(() => {
+    const sectionEl = sectionRef.current;
+    if (!sectionEl) return;
 
-    switch (icon) {
-      case "gem":
-        return <Gem className={iconClass} strokeWidth={1.9} />;
-      case "smartphone":
-        return <Smartphone className={iconClass} strokeWidth={1.9} />;
-      case "sliders":
-        return <SlidersHorizontal className={iconClass} strokeWidth={1.9} />;
-      case "headset":
-        return <Headset className={iconClass} strokeWidth={1.9} />;
-      case "zap":
-        return <Zap className={iconClass} strokeWidth={1.9} />;
-    }
+    const runEntrance = () => {
+      if (hasAnimatedRef.current) return;
+      hasAnimatedRef.current = true;
+
+      gsap.fromTo(
+        ".why-glass-reveal",
+        { y: 16, opacity: 0.95 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.55,
+          stagger: 0.06,
+          ease: "power3.out",
+          clearProps: "opacity,transform",
+        }
+      );
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          runEntrance();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(sectionEl);
+
+    const ctx = gsap.context(() => {
+      // Flowing Linear Light Beam
+      gsap.fromTo(
+        ".why-silk-beam",
+        { strokeDashoffset: 800 },
+        {
+          strokeDashoffset: -800,
+          duration: 7,
+          repeat: -1,
+          ease: "none",
+        }
+      );
+
+      // Alternating Bento Levitation
+      gsap.utils.toArray<HTMLElement>(".why-float-slot").forEach((slot, i) => {
+        gsap.to(slot, {
+          y: i % 2 === 0 ? -4 : 4,
+          duration: 2.8 + (i % 3) * 0.4,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      });
+
+      // Diagonal Light Sheen Sweep
+      gsap.utils.toArray<HTMLElement>(".why-auto-sheen").forEach((beam, i) => {
+        gsap.fromTo(
+          beam,
+          { xPercent: -160 },
+          {
+            xPercent: 350,
+            duration: 2.2,
+            repeat: -1,
+            repeatDelay: 3.5 + i * 0.8,
+            delay: i * 0.6,
+            ease: "power2.inOut",
+          }
+        );
+      });
+
+      gsap.to(".why-studio-widget", {
+        y: -5,
+        duration: 3,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    }, sectionEl);
+
+    return () => {
+      observer.disconnect();
+      ctx.revert();
+    };
+  }, []);
+
+  // Hover Zoom-In / Zoom-Out Pulse
+  const handleCardMouseEnter = (idx: number) => {
+    setHoveredIdx(idx);
+    const el = cardRefs.current[idx];
+    if (!el) return;
+
+    gsap.killTweensOf(el);
+    gsap
+      .timeline()
+      .to(el, {
+        scale: 1.03,
+        y: -5,
+        duration: 0.3,
+        ease: "power2.out",
+      })
+      .to(el, {
+        scale: 1.012,
+        y: -3,
+        duration: 0.4,
+        ease: "sine.inOut",
+      });
+  };
+
+  const handleCardMouseLeave = (idx: number) => {
+    setHoveredIdx(null);
+    const el = cardRefs.current[idx];
+    if (!el) return;
+
+    gsap.killTweensOf(el);
+    gsap.to(el, {
+      scale: 1,
+      y: 0,
+      duration: 0.38,
+      ease: "power3.out",
+    });
+  };
+
+  const handleCardMouseMove = (
+    e: React.MouseEvent<HTMLDivElement>,
+    idx: number
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCursorPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const renderFeatureIcon = (
+    icon: WhyChooseFeatureItem["icon"],
+    isHovered: boolean
+  ) => {
+    const cls = `w-5 h-5 transition-colors duration-300 ${
+      isHovered ? "text-white" : "text-[#136D7E]"
+    }`;
+    if (icon === "gem") return <Gem className={cls} strokeWidth={2} />;
+    if (icon === "smartphone")
+      return <Smartphone className={cls} strokeWidth={2} />;
+    if (icon === "sliders")
+      return <SlidersHorizontal className={cls} strokeWidth={2} />;
+    if (icon === "headphones")
+      return <Headphones className={cls} strokeWidth={2} />;
+    return <Zap className={cls} strokeWidth={2} />;
   };
 
   return (
-    <section className="relative overflow-hidden py-10 sm:py-14 lg:py-16 px-3.5 sm:px-6 lg:px-8 bg-white text-[#162C33]">
-      {/* RIGHT-SIDE SOFT AQUA WAVE & BOTTOM TRANSITION CURVE */}
+    <section
+      ref={sectionRef}
+      className="why-choose-2026 relative overflow-hidden py-14 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#EBF6F9] via-[#F4F9FA] to-[#E2F0F3] text-[#0F2C33]"
+    >
+      {/* 2026 Editorial Typography */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .why-choose-2026 {
+          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .font-why-italic {
+          font-family: 'Instrument Serif', Georgia, serif;
+        }
+      `}</style>
+
+      {/* ===================================================================
+          LINEAR GRADIENT GLASS & SILK WAVE BACKGROUND (ZERO CIRCLES)
+         =================================================================== */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <svg
-          viewBox="0 0 500 500"
+          viewBox="0 0 1440 760"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="absolute top-0 right-0 w-[210px] sm:w-[360px] lg:w-[480px] h-[240px] sm:h-[360px] lg:h-[440px]"
-          preserveAspectRatio="none"
+          className="absolute inset-0 w-full h-full object-cover"
+          preserveAspectRatio="xMidYMid slice"
         >
           <defs>
             <linearGradient
-              id="whyTopAqua"
-              x1="120"
-              y1="20"
-              x2="490"
-              y2="420"
+              id="whyGlassSilk"
+              x1="0"
+              y1="80"
+              x2="1440"
+              y2="720"
               gradientUnits="userSpaceOnUse"
             >
-              <stop offset="0%" stopColor="#D7ECF1" stopOpacity="0.55" />
-              <stop offset="60%" stopColor="#9ACBD7" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#5AA0B0" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="#CBE5EC" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#8CC1CE" stopOpacity="0.32" />
+            </linearGradient>
+
+            <linearGradient
+              id="whyLinearBeam"
+              x1="0"
+              y1="680"
+              x2="1440"
+              y2="120"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0%" stopColor="#136D7E" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="#C8A45D" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#136D7E" stopOpacity="0.2" />
             </linearGradient>
           </defs>
+
+          {/* Clean Linear Silk Wave */}
           <path
-            d="M350 0 C180 70, 120 190, 230 295 C315 375, 425 390, 500 405 L500 0 Z"
-            fill="url(#whyTopAqua)"
+            d="M-60 560 C300 440, 640 680, 980 490 C1220 370, 1380 240, 1500 260 L1500 790 L-60 790 Z"
+            fill="url(#whyGlassSilk)"
+          />
+
+          {/* Linear Light Beam */}
+          <path
+            d="M-60 560 C300 440, 640 680, 980 490 C1220 370, 1380 240, 1500 260"
+            stroke="url(#whyLinearBeam)"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeDasharray="180 620"
+            className="why-silk-beam"
           />
         </svg>
 
-        <svg
-          viewBox="0 0 1440 200"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute inset-x-0 bottom-0 w-full h-[90px] sm:h-[135px] lg:h-[165px]"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient
-              id="whyBottomWaveSoft"
-              x1="0"
-              y1="100"
-              x2="1440"
-              y2="60"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0%" stopColor="#D5ECF1" stopOpacity="0.65" />
-              <stop offset="55%" stopColor="#94C8D4" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#3B8798" stopOpacity="0.85" />
-            </linearGradient>
-            <linearGradient
-              id="whyBottomWaveDeep"
-              x1="780"
-              y1="180"
-              x2="1440"
-              y2="30"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0%" stopColor="#4893A4" stopOpacity="0.35" />
-              <stop offset="65%" stopColor="#1D6B7C" stopOpacity="0.82" />
-              <stop offset="100%" stopColor="#115463" stopOpacity="0.95" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 155 C260 95, 480 95, 760 135 C1030 172, 1250 115, 1440 35 L1440 200 L0 200 Z"
-            fill="url(#whyBottomWaveSoft)"
-          />
-          <path
-            d="M720 200 C950 185, 1210 130, 1440 48 L1440 200 Z"
-            fill="url(#whyBottomWaveDeep)"
-          />
-        </svg>
+        {/* Architectural Hairlines */}
+        <div className="hidden xl:block absolute inset-y-0 left-8 w-[1px] bg-[#CBE4EA]" />
+        <div className="hidden xl:block absolute inset-y-0 right-8 w-[1px] bg-[#CBE4EA]" />
       </div>
 
-      {/* COMPACT MAX-W-6XL CONTAINER */}
+      {/* MAIN CONTAINER */}
       <div className="relative max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7 items-center">
-          {/* LEFT 4 COLS: EDITORIAL HEADING + STUDIO MACBOOK & "W" MUG */}
-          <ScrollReveal direction="left" className="lg:col-span-4 flex flex-col justify-between space-y-4">
-            <div className="relative flex items-start justify-between gap-2 lg:block">
-              <div className="space-y-2 max-w-[64%] sm:max-w-sm lg:max-w-none z-10">
-                <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold tracking-[0.2em] uppercase text-[#136D7E]">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{data.eyebrowLabel}</span>
-                </div>
-
-                <h2 className="leading-[1.12] tracking-[-0.02em]">
-                  <span className="block font-serif text-[25px] sm:text-3xl lg:text-[34px] font-bold text-[#162C33]">
-                    {data.headingPrefix}
-                  </span>
-                  <span className="block font-sans text-[23px] sm:text-3xl lg:text-[32px] font-extrabold text-[#136D7E] mt-0.5">
-                    {data.headingBrand}
-                  </span>
-                </h2>
-
-                <p className="text-[11.5px] sm:text-[13px] text-slate-600 leading-relaxed pt-0.5">
-                  {data.subheading ||
-                    "Your trusted partner for premium, customizable and business-ready website solutions."}
-                </p>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => router.push(data.ctaPath)}
-                    className="inline-flex items-center gap-1 text-[11.5px] sm:text-xs font-extrabold text-[#136D7E] hover:text-[#0D5260] transition-colors group"
-                  >
-                    <span>{data.ctaLabel}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </button>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* ===================================================================
+              LEFT 4 COLS: EDITORIAL HEADING + GRADIENT GLASS BENCHMARK CARD
+             =================================================================== */}
+          <div className="lg:col-span-4 space-y-6 why-glass-reveal">
+            <div className="space-y-3 text-center lg:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-[#CBE4EA] text-[#136D7E] text-[10.5px] font-extrabold tracking-[0.2em] uppercase shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>{data.eyebrowLabel}</span>
               </div>
 
-              <div className="lg:hidden w-[135px] sm:w-[190px] shrink-0 self-end -mr-2 mt-4 anim-float">
-                <StudioLaptopAndMugSvg />
-              </div>
-            </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold leading-[1.1] tracking-[-0.03em] text-[#0F2C33]">
+                {data.headingLine1}
+                <span className="block mt-1">
+                  <span className="bg-gradient-to-r from-[#0F3D3E] via-[#136D7E] to-[#C8A45D] bg-clip-text text-transparent">
+                    {data.headingHighlight}{" "}
+                  </span>
+                  <span className="font-why-italic italic font-normal text-[38px] sm:text-[46px] lg:text-[52px] text-[#136D7E] tracking-normal">
+                    {data.headingItalic}
+                  </span>
+                </span>
+              </h2>
 
-            <div className="hidden lg:block pt-2 w-full max-w-[330px] anim-float">
-              <StudioLaptopAndMugSvg />
-            </div>
-          </ScrollReveal>
+              <p className="text-xs sm:text-[14px] text-slate-600 leading-relaxed max-w-md mx-auto lg:mx-0">
+                {data.subheading}
+              </p>
 
-          {/* RIGHT 8 COLS: 3 + 2 BENTO GRID */}
-          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 sm:gap-4">
-            {data.features.map((feature, idx) => {
-              const isFeatured = idx === 0;
-              const desktopSpanClass =
-                idx < 3 ? "lg:col-span-2" : "lg:col-span-3";
-
-              return (
-                <ScrollReveal
-                  key={feature.title}
-                  delayMs={idx * 70}
-                  className={desktopSpanClass}
+              <div className="pt-1 flex justify-center lg:justify-start">
+                <button
+                  type="button"
+                  onClick={() => router.push(data.ctaPath)}
+                  className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#0F3D3E] via-[#136D7E] to-[#0E8394] hover:brightness-110 text-white font-bold text-xs sm:text-[13px] shadow-[0_12px_28px_rgba(19,109,126,0.24)] hover:-translate-y-0.5 transition-all"
                 >
-                  <button
-                    type="button"
-                    onClick={() => router.push(feature.actionPath)}
-                    className={`luxury-card group relative w-full h-full text-left lg:text-center rounded-2xl px-3.5 py-3 sm:px-5 sm:py-6 flex flex-row lg:flex-col items-center justify-between lg:justify-center gap-3.5 lg:gap-0 ${
-                      isFeatured
-                        ? "bg-white border-[1.5px] border-[#136D7E]/75 shadow-[0_12px_28px_rgba(19,109,126,0.14)]"
-                        : "bg-[#F7FBFC]/95 hover:bg-white border border-slate-200/80 shadow-[0_6px_18px_rgba(15,61,70,0.04)]"
-                    }`}
+                  <span>{data.ctaLabel}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-amber-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+            </div>
+
+            {/* Gradient Glass Studio Benchmark Card */}
+            <div className="why-studio-widget relative overflow-hidden rounded-[26px] bg-gradient-to-br from-white/90 via-[#F2F9FA]/90 to-[#DCEEF2]/85 backdrop-blur-2xl border border-white ring-1 ring-[#136D7E]/20 p-5 shadow-[0_20px_50px_rgba(19,109,126,0.12)]">
+              <div className="flex items-center justify-between gap-2 pb-3.5 mb-3.5 border-b border-[#DCEEF2]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-[11px] font-extrabold tracking-wider uppercase text-[#0F2C33]">
+                    Studio Quality Index
+                  </span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#136D7E] text-white text-[10px] font-extrabold shadow-xs">
+                  2026 Edition
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold text-[#0F2C33] mb-1">
+                    <span>Performance &amp; Core Web Vitals</span>
+                    <span className="text-[#136D7E]">99.4%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-white overflow-hidden border border-[#DCEEF2]">
+                    <div className="h-full w-[99%] rounded-full bg-gradient-to-r from-[#136D7E] via-[#2DD4BF] to-[#C8A45D]" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold text-[#0F2C33] mb-1">
+                    <span>Full-Stack Source Ownership</span>
+                    <span className="text-[#136D7E]">100%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-white overflow-hidden border border-[#DCEEF2]">
+                    <div className="h-full w-full rounded-full bg-gradient-to-r from-[#0F3D3E] via-[#136D7E] to-[#C8A45D]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[#DCEEF2] flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                <span className="inline-flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#136D7E]" />
+                  <span>SSL + Razorpay Ready</span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-[#0F2C33] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#0E9384]" />
+                  <span>Verified</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ===================================================================
+              RIGHT 8 COLS: 3 + 2 GRADIENT GLASS BENTO GRID
+             =================================================================== */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5">
+              {data.features.map((feat, idx) => {
+                const isHovered = hoveredIdx === idx;
+                const desktopSpan =
+                  idx < 3 ? "lg:col-span-2" : "lg:col-span-3";
+                const isLastOddTablet =
+                  data.features.length % 2 !== 0 &&
+                  idx === data.features.length - 1;
+                const cardFill =
+                  CARD_GRADIENT_GLASS[idx % CARD_GRADIENT_GLASS.length];
+
+                return (
+                  <div
+                    key={feat.id}
+                    className={`${desktopSpan} ${
+                      isLastOddTablet ? "sm:col-span-2 lg:col-span-3" : ""
+                    } why-glass-reveal why-float-slot`}
                   >
                     <div
-                      className={`w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 lg:mb-3.5 transition-all duration-300 ${
-                        isFeatured
-                          ? "bg-[#136D7E] shadow-[0_6px_16px_rgba(19,109,126,0.28)]"
-                          : "bg-[#E5F2F6] group-hover:bg-[#136D7E]"
-                      }`}
+                      ref={(el) => {
+                        cardRefs.current[idx] = el;
+                      }}
+                      onMouseEnter={() => handleCardMouseEnter(idx)}
+                      onMouseLeave={() => handleCardMouseLeave(idx)}
+                      onMouseMove={(e) => handleCardMouseMove(e, idx)}
+                      style={{ backgroundImage: cardFill }}
+                      className="group relative h-full rounded-[26px] backdrop-blur-2xl border border-white ring-1 ring-[#136D7E]/15 hover:ring-[#136D7E]/50 p-5 sm:p-6 shadow-[0_14px_38px_rgba(19,109,126,0.08)] hover:shadow-[0_26px_60px_rgba(19,109,126,0.18)] transition-all duration-300 flex flex-col justify-between overflow-hidden will-change-transform"
                     >
-                      {renderFeatureIcon(feature.icon, isFeatured)}
+                      {/* Interactive Cursor Spotlight */}
+                      <div
+                        style={{
+                          opacity: isHovered ? 1 : 0,
+                          background: `radial-gradient(210px circle at ${cursorPos.x}px ${cursorPos.y}px, rgba(200, 164, 93, 0.25), transparent 75%)`,
+                        }}
+                        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+                      />
+
+                      {/* Always-Running Automatic Glass Light Sheen */}
+                      <div className="why-auto-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 z-10 bg-gradient-to-r from-transparent via-white/85 to-transparent skew-x-[-20deg]" />
+
+                      {/* TOP ROW: FROSTED ICON BADGE + METRIC TAG */}
+                      <div className="relative z-10 flex items-center justify-between gap-2 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-white/95 group-hover:bg-gradient-to-br group-hover:from-[#136D7E] group-hover:to-[#0E9384] border border-white group-hover:border-transparent flex items-center justify-center shadow-2xs transition-all duration-300 group-hover:scale-105">
+                          {renderFeatureIcon(feat.icon, isHovered)}
+                        </div>
+
+                        <span className="px-2.5 py-1 rounded-full bg-white/90 border border-white text-[10px] font-extrabold text-[#136D7E] tracking-tight shadow-2xs">
+                          {feat.highlightMetric}
+                        </span>
+                      </div>
+
+                      {/* BOTTOM TEXT: STEP TAG + TITLE + DESCRIPTION */}
+                      <div className="relative z-10 space-y-1.5">
+                        <span className="block text-[9.5px] font-extrabold tracking-[0.18em] uppercase text-[#136D7E]/80">
+                          {feat.tag}
+                        </span>
+                        <h3 className="text-[16px] sm:text-[17px] font-extrabold text-[#0F2C33] group-hover:text-[#136D7E] transition-colors leading-snug">
+                          {feat.title}
+                        </h3>
+                        <p className="text-[12px] sm:text-[12.5px] text-slate-600 leading-relaxed">
+                          {feat.description}
+                        </p>
+                      </div>
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-[13.5px] sm:text-[15px] font-extrabold text-[#162C33] leading-snug group-hover:text-[#136D7E] transition-colors">
-                        {feature.title}
-                      </h3>
-
-                      <p className="mt-0.5 sm:mt-1.5 text-[11px] sm:text-[12px] text-slate-500 leading-relaxed line-clamp-2">
-                        {feature.description}
-                      </p>
-                    </div>
-
-                    <span className="lg:hidden w-7 h-7 rounded-full bg-[#EAF4F7] text-[#136D7E] flex items-center justify-center shrink-0 group-hover:bg-[#136D7E] group-hover:text-white transition-colors">
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
-                  </button>
-                </ScrollReveal>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function StudioLaptopAndMugSvg() {
-  return (
-    <svg
-      viewBox="0 0 360 190"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-auto drop-shadow-[0_10px_20px_rgba(15,52,61,0.12)]"
-    >
-      <defs>
-        <linearGradient id="whyLid" x1="78" y1="22" x2="262" y2="138" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1D272C" />
-          <stop offset="100%" stopColor="#101619" />
-        </linearGradient>
-        <linearGradient id="whyBase" x1="48" y1="142" x2="285" y2="164" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#BCC7CE" />
-          <stop offset="50%" stopColor="#EEF3F6" />
-          <stop offset="100%" stopColor="#A9B6BE" />
-        </linearGradient>
-        <linearGradient id="whyMug" x1="252" y1="106" x2="306" y2="174" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#2A7C8E" />
-          <stop offset="55%" stopColor="#165C6B" />
-          <stop offset="100%" stopColor="#0E424E" />
-        </linearGradient>
-        <radialGradient id="whyShadow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#0E3842" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#0E3842" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <ellipse cx="170" cy="168" rx="135" ry="10" fill="url(#whyShadow)" />
-      <ellipse cx="282" cy="175" rx="38" ry="7" fill="url(#whyShadow)" />
-
-      <g>
-        <path d="M40 96 C26 76, 22 54, 34 38 C42 56, 46 76, 45 96 Z" fill="#46855E" />
-        <path d="M48 96 C48 68, 56 42, 70 30 C68 54, 60 76, 53 96 Z" fill="#5CA074" />
-        <path d="M54 96 C66 76, 80 60, 92 52 C80 70, 68 84, 58 96 Z" fill="#37704D" />
-        <rect x="28" y="95" width="42" height="48" rx="7" fill="#F2F7F9" stroke="#D6E2E7" strokeWidth="1.2" />
-      </g>
-
-      <g>
-        <rect x="84" y="20" width="176" height="118" rx="10" fill="url(#whyLid)" stroke="#C9D4DA" strokeWidth="1.5" />
-        <rect x="91" y="27" width="162" height="104" rx="5" fill="#FFFFFF" />
-        <rect x="91" y="27" width="162" height="11" rx="4" fill="#F4FAFC" />
-        <circle cx="98" cy="32.5" r="1.5" fill="#F87171" />
-        <circle cx="103" cy="32.5" r="1.5" fill="#FBBF24" />
-        <circle cx="108" cy="32.5" r="1.5" fill="#34D399" />
-
-        <rect x="97" y="42" width="64" height="44" rx="4" fill="#136D7E" />
-        <rect x="103" y="50" width="38" height="4" rx="2" fill="#FFFFFF" />
-        <rect x="103" y="57" width="48" height="3" rx="1.5" fill="#BCE0E9" />
-        <rect x="103" y="68" width="26" height="7" rx="3.5" fill="#FBBF24" />
-
-        <rect x="166" y="42" width="81" height="44" rx="4" fill="#EAF4F7" />
-        <circle cx="206" cy="64" r="14" fill="#9ACBD7" opacity="0.7" />
-
-        <rect x="97" y="91" width="47" height="34" rx="4" fill="#F3F9FB" stroke="#DCE8EC" strokeWidth="0.8" />
-        <rect x="148" y="91" width="48" height="34" rx="4" fill="#F3F9FB" stroke="#DCE8EC" strokeWidth="0.8" />
-        <rect x="200" y="91" width="47" height="34" rx="4" fill="#F3F9FB" stroke="#DCE8EC" strokeWidth="0.8" />
-
-        <polygon points="84,138 260,138 286,161 58,161" fill="url(#whyBase)" />
-        <polygon points="96,141 248,141 262,152 82,152" fill="#232D32" opacity="0.85" />
-        <rect x="58" y="161" width="228" height="5" rx="2.5" fill="#C2CDD4" />
-      </g>
-
-      <g>
-        <path d="M302 119 C320 119, 320 156, 302 156" stroke="#145361" strokeWidth="6.5" strokeLinecap="round" fill="none" />
-        <rect x="252" y="106" width="52" height="68" rx="8" fill="url(#whyMug)" />
-        <ellipse cx="278" cy="107" rx="26" ry="4" fill="#4C98A8" />
-        <ellipse cx="278" cy="107" rx="22" ry="2.5" fill="#103B45" />
-        <text x="278" y="148" textAnchor="middle" fill="#FFFFFF" fontFamily="sans-serif" fontWeight="900" fontSize="24">W</text>
-      </g>
-
-      <g stroke="#136D7E" strokeWidth="2.5" strokeLinecap="round">
-        <line x1="322" y1="88" x2="330" y2="78" />
-        <line x1="328" y1="96" x2="340" y2="92" />
-        <line x1="329" y1="106" x2="339" y2="109" />
-      </g>
-    </svg>
   );
 }

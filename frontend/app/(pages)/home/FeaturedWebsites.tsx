@@ -195,11 +195,6 @@ export default function FeaturedWebsites() {
   const [data, setData] = useState<FeaturedWebsitesData>(DEFAULT_FEATURED_DATA);
   const [startIndex, setStartIndex] = useState<number>(0);
   const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [spotlightPos, setSpotlightPos] = useState<{ x: number; y: number }>({
-    x: 150,
-    y: 120,
-  });
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -226,42 +221,34 @@ export default function FeaturedWebsites() {
       .catch((err) => console.error("FeaturedWebsites API error:", err));
   }, []);
 
-  // Ambient floating golden dust & studio glow animation
+  // Ambient Section Background Floating Motes
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>(".studio-gold-mote").forEach((mote, i) => {
         gsap.to(mote, {
           y: i % 2 === 0 ? -24 : 24,
           x: i % 3 === 0 ? 18 : -18,
-          opacity: 0.75,
+          opacity: 0.8,
           duration: 3.8 + i * 0.6,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
         });
       });
-
-      gsap.to(".studio-ambient-halo", {
-        scale: 1.12,
-        opacity: 0.55,
-        duration: 7,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
     }, sectionRef);
 
     return () => ctx.revert();
   }, []);
 
-  // Directional smooth stagger + continuous pastel gradient & orb drift per card
+  // ALWAYS-RUNNING UNIQUE PREMIUM ANIMATIONS FOR EACH CARD (NO HOVER REQUIRED!)
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // 1. Directional Entrance Reveal
       gsap.fromTo(
         ".luxury-showcase-card",
         {
-          x: slideDirection * 36,
-          y: 14,
+          x: slideDirection * 32,
+          y: 16,
           opacity: 0,
           scale: 0.96,
         },
@@ -271,11 +258,12 @@ export default function FeaturedWebsites() {
           opacity: 1,
           scale: 1,
           duration: 0.7,
-          stagger: 0.075,
+          stagger: 0.08,
           ease: "expo.out",
         }
       );
 
+      // 2. Continuous Pastel Gradient Shift per Card
       gsap.utils
         .toArray<HTMLElement>(".pastel-surface-shift")
         .forEach((card, i) => {
@@ -284,7 +272,7 @@ export default function FeaturedWebsites() {
             { backgroundPosition: "0% 50%" },
             {
               backgroundPosition: "100% 50%",
-              duration: 6 + i * 0.85,
+              duration: 5.5 + i * 0.9,
               repeat: -1,
               yoyo: true,
               ease: "sine.inOut",
@@ -292,17 +280,128 @@ export default function FeaturedWebsites() {
           );
         });
 
+      // 3. Continuous Orbiting Pastel Orbs inside Cards
       gsap.utils.toArray<HTMLElement>(".pastel-orb-drift").forEach((orb, i) => {
         gsap.to(orb, {
-          x: i % 2 === 0 ? 22 : -22,
-          y: i % 3 === 0 ? -18 : 18,
-          scale: 1.18,
-          duration: 4.5 + i * 0.55,
+          x: i % 2 === 0 ? 24 : -24,
+          y: i % 3 === 0 ? -20 : 20,
+          scale: 1.22,
+          duration: 4.2 + i * 0.5,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
         });
       });
+
+      // 4. Staggered Automatic Glass Sheen Sweep across Cards (Runs automatically!)
+      gsap.utils.toArray<HTMLElement>(".auto-sheen-beam").forEach((beam, i) => {
+        gsap.fromTo(
+          beam,
+          { xPercent: -160 },
+          {
+            xPercent: 340,
+            duration: 2.2,
+            repeat: -1,
+            repeatDelay: 3.5 + i * 1.1,
+            delay: i * 0.9,
+            ease: "power2.inOut",
+          }
+        );
+      });
+
+      // 5. FOUR DISTINCT CONTINUOUS CHOREOGRAPHIES FOR EACH VISIBLE CARD:
+      // Card 0: Smooth Vertical Levitation + Top-to-Bottom Webpage Glide
+      gsap.to(".card-motion-0", {
+        y: -8,
+        duration: 2.9,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+      gsap.fromTo(
+        ".screen-motion-0",
+        { yPercent: 0 },
+        {
+          yPercent: -34,
+          duration: 6.5,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+
+      // Card 1: 3D Spatial Perspective Breathing + Reverse Bottom-to-Top Webpage Glide
+      gsap.fromTo(
+        ".card-motion-1",
+        { rotateY: -2.8, rotateX: 1.5, y: 3 },
+        {
+          rotateY: 2.8,
+          rotateX: -1.5,
+          y: -5,
+          duration: 3.4,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+      gsap.fromTo(
+        ".screen-motion-1",
+        { yPercent: -34 },
+        {
+          yPercent: 0,
+          duration: 7.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+
+      // Card 2: Cinematic Ken Burns Zoom-In / Zoom-Out + Gentle Float
+      gsap.to(".card-motion-2", {
+        y: -7,
+        duration: 3.2,
+        delay: 0.4,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+      gsap.fromTo(
+        ".screen-motion-2",
+        { scale: 1.0, yPercent: 0 },
+        {
+          scale: 1.1,
+          yPercent: -26,
+          duration: 6.8,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+
+      // Card 3: Subtle Luxury Pendulum Tilt-Wave + Staggered Webpage Glide
+      gsap.fromTo(
+        ".card-motion-3",
+        { rotateZ: -0.8, y: -4 },
+        {
+          rotateZ: 0.8,
+          y: 5,
+          duration: 3.6,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+      gsap.fromTo(
+        ".screen-motion-3",
+        { yPercent: -8 },
+        {
+          yPercent: -36,
+          duration: 6.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
     }, sectionRef);
 
     return () => ctx.revert();
@@ -335,18 +434,6 @@ export default function FeaturedWebsites() {
     touchStartX.current = null;
   };
 
-  const handleCardMouseMove = (
-    e: React.MouseEvent<HTMLDivElement>,
-    idx: number
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setHoveredCard(idx);
-    setSpotlightPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
   const visibleWebsites = Array.from({
     length: Math.min(visibleCount, totalItems),
   }).map((_, offset) => {
@@ -354,6 +441,7 @@ export default function FeaturedWebsites() {
     const item = data.websites[itemIndex];
     return {
       ...item,
+      displayNumber: String(itemIndex + 1).padStart(2, "0"),
       pastelPalette:
         item.pastelPalette ||
         LUXURY_PASTEL_PALETTES[itemIndex % LUXURY_PASTEL_PALETTES.length],
@@ -392,21 +480,22 @@ export default function FeaturedWebsites() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden py-14 sm:py-18 lg:py-22 px-3.5 sm:px-6 lg:px-8 bg-gradient-to-b from-[#FAF7F2] via-[#F5F7F6] to-[#FFFFFF] text-[#112A2C]"
+      className="relative overflow-hidden py-14 sm:py-18 lg:py-22 px-3.5 sm:px-6 lg:px-8 bg-gradient-to-b from-[#FAF7F2] via-[#F4F7F6] to-[#FFFFFF] text-[#112A2C]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* LUXURY STUDIO BACKGROUND */}
+      {/* LUXURY STUDIO AMBIENT BACKGROUND */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="studio-ambient-halo absolute -top-28 right-12 w-[460px] h-[460px] rounded-full bg-[#E6D3B3]/35 blur-[130px]" />
-        <div className="studio-ambient-halo absolute -bottom-28 left-8 w-[440px] h-[440px] rounded-full bg-[#B8D8D4]/30 blur-[130px]" />
+        <div className="absolute -top-28 right-12 w-[460px] h-[460px] rounded-full bg-[#E6D3B3]/35 blur-[130px]" />
+        <div className="absolute -bottom-28 left-8 w-[440px] h-[440px] rounded-full bg-[#B8D8D4]/30 blur-[130px]" />
 
-        <span className="studio-gold-mote absolute top-20 left-[14%] w-1.5 h-1.5 rounded-full bg-[#C8A45D]/45" />
+        <span className="studio-gold-mote absolute top-20 left-[14%] w-1.5 h-1.5 rounded-full bg-[#C8A45D]/50" />
         <span className="studio-gold-mote absolute top-44 right-[18%] w-2 h-2 rounded-full bg-[#0F3D3E]/25" />
-        <span className="studio-gold-mote absolute bottom-28 left-[32%] w-1.5 h-1.5 rounded-full bg-[#C8A45D]/45" />
-        <span className="studio-gold-mote absolute bottom-36 right-[26%] w-2 h-2 rounded-full bg-[#C8A45D]/35" />
+        <span className="studio-gold-mote absolute bottom-28 left-[32%] w-1.5 h-1.5 rounded-full bg-[#C8A45D]/50" />
+        <span className="studio-gold-mote absolute bottom-36 right-[26%] w-2 h-2 rounded-full bg-[#C8A45D]/40" />
       </div>
 
+      {/* Hairline Studio Framing */}
       <div className="pointer-events-none hidden xl:block absolute inset-y-0 left-8 w-[1px] bg-[#E5DEC9]/60" />
       <div className="pointer-events-none hidden xl:block absolute inset-y-0 right-8 w-[1px] bg-[#E5DEC9]/60" />
 
@@ -460,11 +549,11 @@ export default function FeaturedWebsites() {
           </div>
         </div>
 
-        {/* REDESIGNED ARCHITECTURAL PASTEL SHOWCASE CARDS */}
+        {/* PREMIUM ARCHITECTURAL CARDS WITH ALWAYS-RUNNING UNIQUE ANIMATIONS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 [perspective:1500px]">
           {visibleWebsites.map((item, idx) => {
-            const isHovered = hoveredCard === idx;
             const palette = item.pastelPalette!;
+            const motionSlot = idx % 4;
 
             return (
               <div
@@ -474,91 +563,79 @@ export default function FeaturedWebsites() {
                 }`}
               >
                 <div
-                  onMouseMove={(e) => handleCardMouseMove(e, idx)}
-                  onMouseLeave={() => setHoveredCard(null)}
                   onClick={() =>
                     router.push(`/websites/detail?website=${item.websiteSlug}`)
                   }
                   style={{
                     backgroundImage: palette.cardGradient,
                     backgroundSize: "200% 200%",
-                    borderColor: isHovered ? "#C8A45D" : palette.borderTint,
-                    transform: isHovered
-                      ? "translateY(-8px) rotateX(2.5deg) rotateY(-2deg)"
-                      : "translateY(0px) rotateX(0deg) rotateY(0deg)",
-                    transition:
-                      "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease, box-shadow 0.4s ease",
+                    borderColor: palette.borderTint,
                   }}
-                  className="pastel-surface-shift group relative h-full cursor-pointer rounded-[28px] border p-4 shadow-[0_14px_34px_rgba(15,61,62,0.07)] hover:shadow-[0_28px_65px_rgba(15,61,62,0.16)] flex flex-col justify-between overflow-hidden [transform-style:preserve-3d]"
+                  className={`pastel-surface-shift card-motion-${motionSlot} group relative h-full cursor-pointer rounded-[30px] border p-4 shadow-[0_16px_38px_rgba(15,61,62,0.08)] hover:shadow-[0_28px_65px_rgba(15,61,62,0.18)] hover:border-[#C8A45D] transition-shadow duration-500 flex flex-col justify-between overflow-hidden [transform-style:preserve-3d]`}
                 >
-                  {/* Soft Breathing Pastel Orbs Inside Each Card */}
+                  {/* Soft Orbiting Pastel Aura Orbs */}
                   <div
                     style={{ backgroundColor: palette.orbOne }}
-                    className="pastel-orb-drift pointer-events-none absolute -top-10 -right-10 w-36 h-36 rounded-full blur-2xl opacity-35"
+                    className="pastel-orb-drift pointer-events-none absolute -top-10 -right-10 w-36 h-36 rounded-full blur-2xl opacity-40"
                   />
                   <div
                     style={{ backgroundColor: palette.orbTwo }}
                     className="pastel-orb-drift pointer-events-none absolute bottom-12 -left-10 w-36 h-36 rounded-full blur-2xl opacity-35"
                   />
 
-                  {/* Interactive Cursor-Tracking Champagne Spotlight */}
-                  <div
-                    style={{
-                      opacity: isHovered ? 1 : 0,
-                      background: `radial-gradient(240px circle at ${spotlightPos.x}px ${spotlightPos.y}px, rgba(255, 255, 255, 0.65), transparent 75%)`,
-                    }}
-                    className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
-                  />
+                  {/* Automatic Diagonal Glass Light Sheen (Runs Continuously Without Hover!) */}
+                  <div className="auto-sheen-beam pointer-events-none absolute inset-y-0 left-0 w-1/3 z-30 bg-gradient-to-r from-transparent via-white/65 to-transparent skew-x-[-22deg]" />
 
-                  {/* Diagonal Glass Sheen Sweep */}
-                  <div className="pointer-events-none absolute inset-y-0 -left-full w-1/2 z-30 bg-gradient-to-r from-transparent via-white/65 to-transparent skew-x-[-22deg] group-hover:left-[160%] transition-all duration-1000 ease-out" />
-
-                  {/* TOP FLOATING HEADER PILLS */}
+                  {/* TOP EDITORIAL NUMBER & PILLS */}
                   <div className="relative z-20 flex items-center justify-between gap-2 mb-3.5">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-md border border-white text-[#0F3D3E] font-bold text-[9.5px] truncate shadow-2xs">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-md border border-white text-[#0F3D3E] font-bold text-[9.5px] truncate shadow-2xs">
+                      <span className="font-serif font-extrabold text-[#8A6D3B]">
+                        {item.displayNumber}
+                      </span>
                       <span
                         style={{ backgroundColor: palette.dotColor }}
                         className="w-1.5 h-1.5 rounded-full shrink-0"
                       />
                       <span className="truncate">{item.techStackTag}</span>
-                    </span>
+                    </div>
 
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E6C78A] to-[#D4AF37] text-[#0F3D3E] font-extrabold text-[9px] tracking-wide shrink-0 shadow-2xs">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E6C78A] to-[#D4AF37] text-[#0F3D3E] font-extrabold text-[8.5px] tracking-wide shrink-0 shadow-2xs">
                       {renderBadgeIcon(item.badgeText)}
                       <span>{item.badgeText}</span>
                     </span>
                   </div>
 
-                  {/* REDESIGNED FRAMELESS ARCH-WINDOW BROWSER SHOWCASE */}
+                  {/* DOUBLE-BEZEL CHAMPAGNE GALLERY VIEWPORT (CONTINUOUS LIVE SCREEN MOTION) */}
                   <div className="relative z-20 my-auto">
-                    <div className="relative rounded-[20px] p-[3px] bg-gradient-to-b from-white via-[#E6C78A]/60 to-white/70 shadow-[0_14px_30px_rgba(15,61,62,0.12)] transform group-hover:scale-[1.03] group-hover:-translate-y-1 transition-all duration-500 ease-out">
-                      <div className="rounded-[17px] overflow-hidden bg-white">
-                        {/* Sleek Frosted Browser Header */}
-                        <div className="flex items-center justify-between bg-[#FAF7F2]/95 px-3 py-1.5 border-b border-[#EFE8DA]">
+                    <div className="relative rounded-[22px] p-[3.5px] bg-gradient-to-b from-white via-[#E6C78A]/75 to-white/80 shadow-[0_14px_32px_rgba(15,61,62,0.12)]">
+                      <div className="rounded-[18.5px] overflow-hidden bg-white">
+                        {/* Sleek Frosted Browser Top Bar */}
+                        <div className="flex items-center justify-between bg-[#FAF7F2] px-3 py-1.5 border-b border-[#EFE8DA]">
                           <div className="flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#D98A94]" />
                             <span className="w-1.5 h-1.5 rounded-full bg-[#DFB977]" />
                             <span className="w-1.5 h-1.5 rounded-full bg-[#7FA898]" />
                           </div>
-                          <span className="text-[8.5px] font-semibold tracking-wider uppercase text-slate-400">
-                            Live Preview
+                          <span className="inline-flex items-center gap-1 text-[8px] font-extrabold tracking-widest uppercase text-[#0F3D3E]/70">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                            <span>Live Preview</span>
                           </span>
                         </div>
 
-                        {/* Tall Live-Scrolling Webpage Preview */}
-                        <div className="relative h-[155px] sm:h-[168px] overflow-hidden bg-[#0F3D3E]">
+                        {/* Continuously Animated Webpage Screen */}
+                        <div className="relative h-[162px] sm:h-[175px] overflow-hidden bg-[#0F3D3E]">
                           <img
                             src={item.image}
                             alt={item.title}
-                            className="w-full h-auto min-h-[165%] object-cover object-top transition-transform duration-[4500ms] ease-in-out group-hover:-translate-y-[36%]"
+                            className={`screen-motion-${motionSlot} w-full h-auto min-h-[168%] object-cover object-top will-change-transform block`}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#09292A]/75 via-transparent to-transparent" />
 
-                          {/* Floating Glass "3D Tour" Badge on Hover */}
+                          {/* Always-Visible Subtle Floating Glass Pill */}
                           <div className="absolute inset-x-0 bottom-2.5 flex justify-center">
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-[#0F3D3E] font-extrabold text-[9.5px] translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 shadow-md">
-                              <Eye className="w-3 h-3 text-[#8A6D3B]" />
-                              <span>Explore 3D Tour</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 group-hover:bg-[#E6C78A] backdrop-blur-md text-[#0F3D3E] font-extrabold text-[9.5px] transition-colors duration-300 shadow-md">
+                              <Eye className="w-3 h-3 text-[#8A6D3B] group-hover:text-[#0F3D3E]" />
+                              <span>3D Live Tour</span>
                             </span>
                           </div>
                         </div>
@@ -566,21 +643,21 @@ export default function FeaturedWebsites() {
                     </div>
                   </div>
 
-                  {/* EDITORIAL TITLE + FLOATING FROSTED GLASS DOCK */}
+                  {/* EDITORIAL TITLE + FROSTED GLASS DOCK */}
                   <div className="relative z-20 pt-4 space-y-3">
                     <div className="px-0.5">
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#8A6D3B] truncate">
                         {item.category}
                       </p>
-                      <h3 className="font-serif text-[18px] font-bold text-[#0F3D3E] truncate mt-0.5 group-hover:text-[#165456] transition-colors">
+                      <h3 className="font-serif text-[18.5px] font-bold text-[#0F3D3E] truncate mt-0.5">
                         {item.title}
                       </h3>
                     </div>
 
                     {/* Frosted Glass Price & Action Dock */}
-                    <div className="rounded-2xl bg-white/80 backdrop-blur-md border border-white/90 px-3.5 py-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                    <div className="rounded-2xl bg-white/85 backdrop-blur-md border border-white px-3.5 py-2.5 flex items-center justify-between gap-2 shadow-2xs">
                       <div>
-                        <span className="block text-[9.5px] font-semibold uppercase tracking-wider text-slate-400 leading-none">
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none">
                           {item.priceLabel}
                         </span>
                         <span className="block text-[16px] font-extrabold text-[#0F3D3E] mt-1 leading-none">
@@ -588,8 +665,8 @@ export default function FeaturedWebsites() {
                         </span>
                       </div>
 
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0F3D3E] text-[#FAF7F2] text-[11px] font-bold group-hover:bg-[#165456] group-hover:shadow-md transition-all duration-300">
-                        <span>View</span>
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0F3D3E] group-hover:bg-[#165456] text-[#FAF7F2] text-[11px] font-bold shadow-xs transition-all duration-300">
+                        <span>Explore</span>
                         <ArrowRight className="w-3 h-3 text-[#E6C78A] group-hover:translate-x-0.5 transition-transform" />
                       </span>
                     </div>
